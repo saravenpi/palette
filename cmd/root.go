@@ -48,30 +48,33 @@ func NewRootCommand() *cobra.Command {
 			}
 
 			theme := palette.GenerateTheme(colors, dom, opts)
-			formatted, err := palette.FormatTheme(theme, formatFlag)
+			rawFormatted, err := palette.FormatTheme(theme, formatFlag)
 			if err != nil {
 				return err
 			}
 
 			if outputFlag != "" {
-				if err := os.WriteFile(outputFlag, []byte(formatted), 0644); err != nil {
+				if err := os.WriteFile(outputFlag, []byte(rawFormatted), 0644); err != nil {
 					return fmt.Errorf("failed to write output file: %w", err)
 				}
-				if term.IsTerminal(int(os.Stdout.Fd())) && !rawFlag {
+				if (term.IsTerminal(int(os.Stdout.Fd())) || previewFlag) && !rawFlag {
 					fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
-					fmt.Printf("Theme written to %s\n", outputFlag)
+					fmt.Println()
+					fmt.Print(palette.RenderStyledConfig(theme, formatFlag))
+					fmt.Printf("\nTheme written to %s\n", outputFlag)
 				}
 				return nil
 			}
 
-			if previewFlag {
-				fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
-				if !rawFlag {
-					fmt.Println()
-				}
+			isTTY := term.IsTerminal(int(os.Stdout.Fd()))
+			if (!isTTY && !previewFlag) || rawFlag {
+				fmt.Print(rawFormatted)
+				return nil
 			}
 
-			fmt.Print(formatted)
+			fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
+			fmt.Println()
+			fmt.Print(palette.RenderStyledConfig(theme, formatFlag))
 			return nil
 		},
 	}
@@ -79,8 +82,8 @@ func NewRootCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&formatFlag, "format", "f", "ghostty", "output format (ghostty, kitty, alacritty, wezterm, foot, xresources, json, hex)")
 	cmd.Flags().StringVarP(&modeFlag, "mode", "m", "duo", "palette mode (duo, ansi, dominant)")
 	cmd.Flags().BoolVarP(&lightFlag, "light", "l", false, "generate light theme")
-	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview")
-	cmd.Flags().BoolVarP(&rawFlag, "raw", "r", false, "output raw config without preview")
+	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview with actual colors")
+	cmd.Flags().BoolVarP(&rawFlag, "raw", "r", false, "output raw config without styling")
 	cmd.Flags().StringVarP(&outputFlag, "output", "o", "", "write theme to file")
 	cmd.Flags().IntVar(&maxDimFlag, "max-dim", 400, "maximum image dimension before color extraction")
 

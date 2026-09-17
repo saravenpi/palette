@@ -4,9 +4,23 @@ import (
 	"fmt"
 	"image/color"
 	"path/filepath"
+	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/lucasb-eyer/go-colorful"
 )
+
+func ContrastColor(hex string) color.Color {
+	c, err := colorful.Hex(hex)
+	if err != nil {
+		return lipgloss.Color("#ffffff")
+	}
+	_, _, l := c.Hsl()
+	if l > 0.55 {
+		return lipgloss.Color("#000000")
+	}
+	return lipgloss.Color("#ffffff")
+}
 
 func RenderPreview(t Theme, imagePath string, mode string, light bool) string {
 	themeMode := "dark"
@@ -16,14 +30,13 @@ func RenderPreview(t Theme, imagePath string, mode string, light bool) string {
 
 	accent1 := lipgloss.Color(t.Palette[1])
 	accent2 := lipgloss.Color(t.Palette[4])
-	curColor := lipgloss.Color(t.Cursor)
 	bg := lipgloss.Color(t.Background)
 	fg := lipgloss.Color(t.Foreground)
 	dim := lipgloss.Color(t.Palette[8])
 
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#ffffff")).
+		Foreground(ContrastColor(t.Palette[4])).
 		Background(accent2).
 		Padding(0, 1)
 
@@ -41,43 +54,62 @@ func RenderPreview(t Theme, imagePath string, mode string, light bool) string {
 		BorderForeground(accent1).
 		Padding(1, 2)
 
-	swatch := func(label string, col color.Color, hex string) string {
-		block := lipgloss.NewStyle().Foreground(col).Render("██")
-		text := lipgloss.NewStyle().Foreground(fg).Render(fmt.Sprintf(" %-3s %s", label, hex))
-		return block + text
+	swatch := func(label string, hex string) string {
+		col := lipgloss.Color(hex)
+		block := lipgloss.NewStyle().Foreground(col).Render("████")
+		pill := lipgloss.NewStyle().Background(col).Foreground(ContrastColor(hex)).Bold(true).Render(" " + hex + " ")
+		text := lipgloss.NewStyle().Foreground(fg).Render(fmt.Sprintf("%-3s", label))
+		return fmt.Sprintf("%s %s %s", text, block, pill)
 	}
 
-	normRow1 := fmt.Sprintf("%s   %s   %s   %s",
-		swatch("0", lipgloss.Color(t.Palette[0]), t.Palette[0]),
-		swatch("1", lipgloss.Color(t.Palette[1]), t.Palette[1]),
-		swatch("2", lipgloss.Color(t.Palette[2]), t.Palette[2]),
-		swatch("3", lipgloss.Color(t.Palette[3]), t.Palette[3]),
+	normRow1 := fmt.Sprintf("  %s    %s",
+		swatch("0", t.Palette[0]),
+		swatch("1", t.Palette[1]),
 	)
-	normRow2 := fmt.Sprintf("%s   %s   %s   %s",
-		swatch("4", lipgloss.Color(t.Palette[4]), t.Palette[4]),
-		swatch("5", lipgloss.Color(t.Palette[5]), t.Palette[5]),
-		swatch("6", lipgloss.Color(t.Palette[6]), t.Palette[6]),
-		swatch("7", lipgloss.Color(t.Palette[7]), t.Palette[7]),
+	normRow2 := fmt.Sprintf("  %s    %s",
+		swatch("2", t.Palette[2]),
+		swatch("3", t.Palette[3]),
 	)
-
-	brightRow1 := fmt.Sprintf("%s   %s   %s   %s",
-		swatch("8", lipgloss.Color(t.Palette[8]), t.Palette[8]),
-		swatch("9", lipgloss.Color(t.Palette[9]), t.Palette[9]),
-		swatch("10", lipgloss.Color(t.Palette[10]), t.Palette[10]),
-		swatch("11", lipgloss.Color(t.Palette[11]), t.Palette[11]),
+	normRow3 := fmt.Sprintf("  %s    %s",
+		swatch("4", t.Palette[4]),
+		swatch("5", t.Palette[5]),
 	)
-	brightRow2 := fmt.Sprintf("%s   %s   %s   %s",
-		swatch("12", lipgloss.Color(t.Palette[12]), t.Palette[12]),
-		swatch("13", lipgloss.Color(t.Palette[13]), t.Palette[13]),
-		swatch("14", lipgloss.Color(t.Palette[14]), t.Palette[14]),
-		swatch("15", lipgloss.Color(t.Palette[15]), t.Palette[15]),
+	normRow4 := fmt.Sprintf("  %s    %s",
+		swatch("6", t.Palette[6]),
+		swatch("7", t.Palette[7]),
 	)
 
-	specRow := fmt.Sprintf("%s   %s   %s",
-		swatch("bg", bg, t.Background),
-		swatch("fg", fg, t.Foreground),
-		swatch("cur", curColor, t.Cursor),
+	brightRow1 := fmt.Sprintf("  %s    %s",
+		swatch("8", t.Palette[8]),
+		swatch("9", t.Palette[9]),
 	)
+	brightRow2 := fmt.Sprintf("  %s    %s",
+		swatch("10", t.Palette[10]),
+		swatch("11", t.Palette[11]),
+	)
+	brightRow3 := fmt.Sprintf("  %s    %s",
+		swatch("12", t.Palette[12]),
+		swatch("13", t.Palette[13]),
+	)
+	brightRow4 := fmt.Sprintf("  %s    %s",
+		swatch("14", t.Palette[14]),
+		swatch("15", t.Palette[15]),
+	)
+
+	specRow1 := fmt.Sprintf("  %s    %s",
+		swatch("bg", t.Background),
+		swatch("fg", t.Foreground),
+	)
+	specRow2 := fmt.Sprintf("  %s",
+		swatch("cur", t.Cursor),
+	)
+
+	termBox := lipgloss.NewStyle().
+		Background(bg).
+		Foreground(fg).
+		Padding(1, 2).
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(dim)
 
 	promptSym := lipgloss.NewStyle().Foreground(accent1).Render("❯ ")
 	cmdText := lipgloss.NewStyle().Foreground(fg).Render("git status")
@@ -85,26 +117,70 @@ func RenderPreview(t Theme, imagePath string, mode string, light bool) string {
 	modText := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Palette[2])).Render("  modified:   main.go")
 	untrackText := lipgloss.NewStyle().Foreground(lipgloss.Color(t.Palette[1])).Render("  untracked:  " + filepath.Base(imagePath))
 
-	content := lipgloss.JoinVertical(lipgloss.Left,
-		header,
-		"",
-		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Normal ANSI Colors:"),
-		normRow1,
-		normRow2,
-		"",
-		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Bright ANSI Colors:"),
-		brightRow1,
-		brightRow2,
-		"",
-		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Special Colors:"),
-		specRow,
-		"",
-		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Terminal Preview:"),
+	termContent := lipgloss.JoinVertical(lipgloss.Left,
 		promptSym+cmdText,
 		branchText,
 		modText,
 		untrackText,
 	)
 
+	content := lipgloss.JoinVertical(lipgloss.Left,
+		header,
+		"",
+		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Normal ANSI Colors:"),
+		normRow1,
+		normRow2,
+		normRow3,
+		normRow4,
+		"",
+		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Bright ANSI Colors:"),
+		brightRow1,
+		brightRow2,
+		brightRow3,
+		brightRow4,
+		"",
+		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Special Colors:"),
+		specRow1,
+		specRow2,
+		"",
+		lipgloss.NewStyle().Bold(true).Foreground(fg).Render("Terminal Preview:"),
+		termBox.Render(termContent),
+	)
+
 	return cardStyle.Render(content)
+}
+
+func RenderStyledConfig(t Theme, format string) string {
+	if strings.ToLower(format) != "ghostty" && format != "" {
+		out, _ := FormatTheme(t, format)
+		return out
+	}
+
+	var b strings.Builder
+	prefixStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#888888"))
+
+	for i, hex := range t.Palette {
+		col := lipgloss.Color(hex)
+		badge := lipgloss.NewStyle().Background(col).Foreground(ContrastColor(hex)).Bold(true).Render(" " + hex + " ")
+		block := lipgloss.NewStyle().Foreground(col).Render("████")
+		valStyle := lipgloss.NewStyle().Foreground(col).Bold(true)
+		line := fmt.Sprintf("%s%s  %s  %s\n", prefixStyle.Render(fmt.Sprintf("palette = %2d=", i)), valStyle.Render(hex), block, badge)
+		b.WriteString(line)
+	}
+
+	specials := []struct{ name, hex string }{
+		{"background  ", t.Background},
+		{"foreground  ", t.Foreground},
+		{"cursor-color", t.Cursor},
+	}
+	for _, s := range specials {
+		col := lipgloss.Color(s.hex)
+		badge := lipgloss.NewStyle().Background(col).Foreground(ContrastColor(s.hex)).Bold(true).Render(" " + s.hex + " ")
+		block := lipgloss.NewStyle().Foreground(col).Render("████")
+		valStyle := lipgloss.NewStyle().Foreground(col).Bold(true)
+		line := fmt.Sprintf("%s%s  %s  %s\n", prefixStyle.Render(fmt.Sprintf("%s = ", s.name)), valStyle.Render(s.hex), block, badge)
+		b.WriteString(line)
+	}
+
+	return b.String()
 }
