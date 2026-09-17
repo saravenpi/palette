@@ -6,6 +6,14 @@ Terminal color palette generator and dotfile synchronization system.
 
 ## Installation
 
+Install directly with curl:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/saravenpi/palette/main/install.sh | bash
+```
+
+Or build from source:
+
 ```bash
 git clone https://github.com/saravenpi/palette.git
 cd palette
