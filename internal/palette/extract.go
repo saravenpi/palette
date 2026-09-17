@@ -93,7 +93,19 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 	pixels := make([]matcolor.ARGB, 0, sw*sh)
 	for y := sb.Min.Y; y < sb.Max.Y; y++ {
 		for x := sb.Min.X; x < sb.Max.X; x++ {
-			pixels = append(pixels, matcolor.ARGBFromInterface(scaled.At(x, y)))
+			c := scaled.At(x, y)
+			_, _, _, a := c.RGBA()
+			if a < 32768 {
+				continue
+			}
+			pixels = append(pixels, matcolor.ARGBFromInterface(c))
+		}
+	}
+	if len(pixels) == 0 {
+		for y := sb.Min.Y; y < sb.Max.Y; y++ {
+			for x := sb.Min.X; x < sb.Max.X; x++ {
+				pixels = append(pixels, matcolor.ARGBFromInterface(scaled.At(x, y)))
+			}
 		}
 	}
 
