@@ -4,7 +4,7 @@ go 1.26.8
 
 require (
 	charm.land/lipgloss/v2 v2.0.0-beta.3.0.20251106193318-19329a3e8410
-	github.com/cascax/colorthief-go v0.0.0-20200408142718-f393563c12c5
+	github.com/Nadim147c/material/v3 v3.1.2
 	github.com/charmbracelet/fang v1.0.0
 	github.com/lucasb-eyer/go-colorful v1.3.0
 	github.com/spf13/cobra v1.9.1
@@ -31,7 +31,6 @@ require (
 	github.com/muesli/mango-cobra v1.2.0 // indirect
 	github.com/muesli/mango-pflag v0.1.0 // indirect
 	github.com/muesli/roff v0.1.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect

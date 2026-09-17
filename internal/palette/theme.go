@@ -3,7 +3,13 @@ package palette
 import (
 	"math"
 	"sort"
+	"strings"
 
+	"github.com/Nadim147c/material/v3/blend"
+	matcolor "github.com/Nadim147c/material/v3/color"
+	"github.com/Nadim147c/material/v3/dynamic"
+	"github.com/Nadim147c/material/v3/num"
+	"github.com/Nadim147c/material/v3/palettes"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
@@ -17,26 +23,70 @@ func clamp(v, min, max float64) float64 {
 	return v
 }
 
-func hueDist(h1, h2 float64) float64 {
-	d := math.Abs(h1 - h2)
-	if d > 180 {
-		return 360 - d
-	}
-	return d
+func toARGB(c colorful.Color) matcolor.ARGB {
+	return matcolor.NewARGB(255,
+		uint8(clamp(c.R*255.0, 0, 255)),
+		uint8(clamp(c.G*255.0, 0, 255)),
+		uint8(clamp(c.B*255.0, 0, 255)),
+	)
 }
 
-func filterAccents(colors []colorful.Color) []colorful.Color {
-	var accents []colorful.Color
-	for _, c := range colors {
-		_, s, l := c.Hsl()
-		if s >= 0.12 && l >= 0.15 && l <= 0.85 {
-			accents = append(accents, c)
+func hexLower(c matcolor.ARGB) string {
+	return strings.ToLower(c.HexRGB())
+}
+
+func getVariant(mode string) dynamic.Variant {
+	switch mode {
+	case "vibrant":
+		return dynamic.VariantVibrant
+	case "expressive":
+		return dynamic.VariantExpressive
+	case "tonal":
+		return dynamic.VariantTonalSpot
+	case "content":
+		return dynamic.VariantContent
+	case "rainbow":
+		return dynamic.VariantRainbow
+	case "fruit_salad":
+		return dynamic.VariantFruitSalad
+	default:
+		return dynamic.VariantVibrant
+	}
+}
+
+func buildAnsiPalettes(scored []matcolor.ARGB, seedARGB matcolor.ARGB) [6]*palettes.TonalPalette {
+	ansiHues := [6]float64{25, 140, 85, 255, 315, 195}
+	var res [6]*palettes.TonalPalette
+
+	for i, targetHue := range ansiHues {
+		bestDist := 999.0
+		var bestHct matcolor.Hct
+		found := false
+
+		for _, sc := range scored {
+			hct := sc.ToHct()
+			if hct.Chroma < 14 {
+				continue
+			}
+			dist := num.DifferenceDegrees(hct.Hue, targetHue)
+			if dist < bestDist && dist < 35 {
+				bestDist = dist
+				bestHct = hct
+				found = true
+			}
+		}
+
+		if found {
+			chroma := math.Max(bestHct.Chroma, 40)
+			res[i] = palettes.FromHueAndChroma(bestHct.Hue, chroma)
+		} else {
+			base := matcolor.NewHct(targetHue, 55, 60).ToARGB()
+			harm := blend.Harmonize(base, seedARGB)
+			harmHct := harm.ToHct()
+			res[i] = palettes.FromHueAndChroma(harmHct.Hue, math.Max(harmHct.Chroma, 44))
 		}
 	}
-	if len(accents) == 0 {
-		return colors
-	}
-	return accents
+	return res
 }
 
 func GenerateTheme(colors []colorful.Color, dom colorful.Color, opts Options) Theme {
@@ -47,255 +97,231 @@ func GenerateTheme(colors []colorful.Color, dom colorful.Color, opts Options) Th
 }
 
 func generateDarkTheme(colors []colorful.Color, dom colorful.Color, opts Options) Theme {
-	dh, ds, _ := dom.Hsl()
+	seedARGB := toARGB(dom)
+	seedHct := seedARGB.ToHct()
 
-	bg := colorful.Hsl(dh, clamp(ds*0.25, 0.04, 0.22), 0.045)
-	fg := colorful.Hsl(dh, clamp(ds*0.12, 0.02, 0.14), 0.88)
-	c0 := colorful.Hsl(dh, clamp(ds*0.20, 0.04, 0.18), 0.11)
-	c8 := colorful.Hsl(dh, clamp(ds*0.18, 0.04, 0.16), 0.28)
-	c7 := colorful.Hsl(dh, clamp(ds*0.12, 0.02, 0.12), 0.84)
-	c15 := colorful.Hsl(dh, clamp(ds*0.08, 0.01, 0.08), 0.97)
-
-	accents := filterAccents(colors)
-	if len(accents) < 2 {
-		accents = append(accents, colorful.Hsl(dh, 0.6, 0.5), colorful.Hsl(math.Mod(dh+180, 360), 0.6, 0.5))
+	scored := make([]matcolor.ARGB, len(colors))
+	for i, c := range colors {
+		scored[i] = toARGB(c)
 	}
 
-	var normalAccents [6]colorful.Color
-	var brightAccents [6]colorful.Color
-	var cursor colorful.Color
+	variant := getVariant(opts.Mode)
+	scheme := dynamic.NewDynamicScheme(seedHct, variant, 0.0, true, dynamic.PlatformPhone, dynamic.Version2025)
+
+	bg := hexLower(scheme.NeutralPalette.Tone(6))
+	fg := hexLower(scheme.NeutralPalette.Tone(90))
+	c0 := hexLower(scheme.NeutralPalette.Tone(12))
+	c7 := hexLower(scheme.NeutralPalette.Tone(80))
+	c8 := hexLower(scheme.NeutralVariantPalette.Tone(35))
+	c15 := hexLower(scheme.NeutralPalette.Tone(96))
+	cursor := hexLower(scheme.PrimaryPalette.Tone(80))
+
+	var normalAccents [6]string
+	var brightAccents [6]string
 
 	switch opts.Mode {
-	case "ansi", "spectrum":
-		ansiHues := []float64{0, 120, 55, 225, 300, 180}
-		for i, targetHue := range ansiHues {
-			bestIdx := 0
-			bestDist := 999.0
-			for j, acc := range accents {
-				h, _, _ := acc.Hsl()
-				dist := hueDist(h, targetHue)
-				if dist < bestDist {
-					bestDist = dist
-					bestIdx = j
+	case "duo":
+		bestA := dom
+		bestB := dom
+		maxDist := 0.0
+		if len(colors) >= 2 {
+			for i := 0; i < len(colors); i++ {
+				for j := i + 1; j < len(colors); j++ {
+					d := colors[i].DistanceLab(colors[j])
+					if d > maxDist {
+						maxDist = d
+						bestA = colors[i]
+						bestB = colors[j]
+					}
 				}
 			}
-			acc := accents[bestIdx]
-			ah, as, al := acc.Hsl()
-			if bestDist > 50 {
-				ah = targetHue
-			}
-			as = clamp(as*1.1, 0.45, 0.85)
-			al = clamp(al, 0.45, 0.65)
-			normalAccents[i] = colorful.Hsl(ah, as, al)
-			brightAccents[i] = colorful.Hsl(ah, clamp(as*1.05, 0.45, 0.95), clamp(al+0.18, 0.65, 0.88))
+		} else {
+			h, s, l := dom.Hsl()
+			bestB = colorful.Hsl(math.Mod(h+180, 360), clamp(s, 0.4, 0.9), clamp(l, 0.4, 0.7))
 		}
-		cursor = brightAccents[3]
 
-	case "dominant", "wal":
-		sorted := make([]colorful.Color, len(accents))
-		copy(sorted, accents)
+		hctA := toARGB(bestA).ToHct()
+		hctB := toARGB(bestB).ToHct()
+		palA := palettes.FromHueAndChroma(hctA.Hue, math.Max(hctA.Chroma, 40))
+		palB := palettes.FromHueAndChroma(hctB.Hue, math.Max(hctB.Chroma, 40))
+
+		colA := hexLower(palA.Tone(70))
+		colB := hexLower(palB.Tone(70))
+		bcolA := hexLower(palA.Tone(85))
+		bcolB := hexLower(palB.Tone(85))
+
+		for i := 0; i < 3; i++ {
+			normalAccents[i] = colA
+			brightAccents[i] = bcolA
+		}
+		for i := 3; i < 6; i++ {
+			normalAccents[i] = colB
+			brightAccents[i] = bcolB
+		}
+		cursor = colB
+
+	case "dominant":
+		sorted := make([]colorful.Color, len(colors))
+		copy(sorted, colors)
 		sort.Slice(sorted, func(i, j int) bool {
-			_, _, li := sorted[i].Hsl()
-			_, _, lj := sorted[j].Hsl()
-			return li < lj
+			return toARGB(sorted[i]).ToHct().Tone < toARGB(sorted[j]).ToHct().Tone
 		})
+		if len(sorted) == 0 {
+			sorted = append(sorted, dom)
+		}
 		for i := 0; i < 6; i++ {
 			c := sorted[i%len(sorted)]
-			h, s, l := c.Hsl()
-			normalAccents[i] = colorful.Hsl(h, clamp(s*1.1, 0.4, 0.85), clamp(l, 0.45, 0.65))
-			brightAccents[i] = colorful.Hsl(h, clamp(s*1.05, 0.4, 0.95), clamp(l+0.18, 0.65, 0.88))
+			hct := toARGB(c).ToHct()
+			pal := palettes.FromHueAndChroma(hct.Hue, math.Max(hct.Chroma, 40))
+			normalAccents[i] = hexLower(pal.Tone(70))
+			brightAccents[i] = hexLower(pal.Tone(85))
 		}
 		cursor = normalAccents[1]
 
 	default:
-		bestA := accents[0]
-		bestB := accents[1]
-		maxDist := 0.0
-		for i := 0; i < len(accents); i++ {
-			for j := i + 1; j < len(accents); j++ {
-				d := accents[i].DistanceLab(accents[j])
-				if d > maxDist {
-					maxDist = d
-					bestA = accents[i]
-					bestB = accents[j]
-				}
-			}
+		palettesList := buildAnsiPalettes(scored, seedARGB)
+		for i := 0; i < 6; i++ {
+			normalAccents[i] = hexLower(palettesList[i].Tone(70))
+			brightAccents[i] = hexLower(palettesList[i].Tone(85))
 		}
-
-		ha, sa, la := bestA.Hsl()
-		hb, sb, lb := bestB.Hsl()
-
-		acc1 := colorful.Hsl(ha, clamp(sa*1.15, 0.45, 0.85), clamp(la, 0.45, 0.62))
-		acc2 := colorful.Hsl(hb, clamp(sb*1.15, 0.45, 0.85), clamp(lb, 0.45, 0.62))
-
-		bacc1 := colorful.Hsl(ha, clamp(sa*1.05, 0.45, 0.95), clamp(la+0.20, 0.65, 0.90))
-		bacc2 := colorful.Hsl(hb, clamp(sb*1.05, 0.45, 0.95), clamp(lb+0.20, 0.65, 0.90))
-
-		normalAccents[0] = acc1
-		normalAccents[1] = acc1
-		normalAccents[2] = acc1
-		normalAccents[3] = acc2
-		normalAccents[4] = acc2
-		normalAccents[5] = acc2
-
-		brightAccents[0] = bacc1
-		brightAccents[1] = bacc1
-		brightAccents[2] = bacc1
-		brightAccents[3] = bacc2
-		brightAccents[4] = bacc2
-		brightAccents[5] = bacc2
-
-		cursor = acc2
 	}
 
 	return Theme{
-		Background: bg.Hex(),
-		Foreground: fg.Hex(),
-		Cursor:     cursor.Hex(),
+		Background: bg,
+		Foreground: fg,
+		Cursor:     cursor,
 		Palette: [16]string{
-			c0.Hex(),
-			normalAccents[0].Hex(),
-			normalAccents[1].Hex(),
-			normalAccents[2].Hex(),
-			normalAccents[3].Hex(),
-			normalAccents[4].Hex(),
-			normalAccents[5].Hex(),
-			c7.Hex(),
-			c8.Hex(),
-			brightAccents[0].Hex(),
-			brightAccents[1].Hex(),
-			brightAccents[2].Hex(),
-			brightAccents[3].Hex(),
-			brightAccents[4].Hex(),
-			brightAccents[5].Hex(),
-			c15.Hex(),
+			c0,
+			normalAccents[0],
+			normalAccents[1],
+			normalAccents[2],
+			normalAccents[3],
+			normalAccents[4],
+			normalAccents[5],
+			c7,
+			c8,
+			brightAccents[0],
+			brightAccents[1],
+			brightAccents[2],
+			brightAccents[3],
+			brightAccents[4],
+			brightAccents[5],
+			c15,
 		},
 	}
 }
 
 func generateLightTheme(colors []colorful.Color, dom colorful.Color, opts Options) Theme {
-	dh, ds, _ := dom.Hsl()
+	seedARGB := toARGB(dom)
+	seedHct := seedARGB.ToHct()
 
-	bg := colorful.Hsl(dh, clamp(ds*0.15, 0.02, 0.12), 0.96)
-	fg := colorful.Hsl(dh, clamp(ds*0.25, 0.04, 0.20), 0.15)
-	c0 := colorful.Hsl(dh, clamp(ds*0.25, 0.04, 0.20), 0.20)
-	c8 := colorful.Hsl(dh, clamp(ds*0.20, 0.04, 0.16), 0.42)
-	c7 := colorful.Hsl(dh, clamp(ds*0.15, 0.02, 0.12), 0.82)
-	c15 := colorful.Hsl(dh, clamp(ds*0.08, 0.01, 0.08), 0.08)
-
-	accents := filterAccents(colors)
-	if len(accents) < 2 {
-		accents = append(accents, colorful.Hsl(dh, 0.6, 0.5), colorful.Hsl(math.Mod(dh+180, 360), 0.6, 0.5))
+	scored := make([]matcolor.ARGB, len(colors))
+	for i, c := range colors {
+		scored[i] = toARGB(c)
 	}
 
-	var normalAccents [6]colorful.Color
-	var brightAccents [6]colorful.Color
-	var cursor colorful.Color
+	variant := getVariant(opts.Mode)
+	scheme := dynamic.NewDynamicScheme(seedHct, variant, 0.0, false, dynamic.PlatformPhone, dynamic.Version2025)
+
+	bg := hexLower(scheme.NeutralPalette.Tone(96))
+	fg := hexLower(scheme.NeutralPalette.Tone(12))
+	c0 := hexLower(scheme.NeutralPalette.Tone(20))
+	c7 := hexLower(scheme.NeutralPalette.Tone(80))
+	c8 := hexLower(scheme.NeutralVariantPalette.Tone(55))
+	c15 := hexLower(scheme.NeutralPalette.Tone(99))
+	cursor := hexLower(scheme.PrimaryPalette.Tone(40))
+
+	var normalAccents [6]string
+	var brightAccents [6]string
 
 	switch opts.Mode {
-	case "ansi", "spectrum":
-		ansiHues := []float64{0, 120, 55, 225, 300, 180}
-		for i, targetHue := range ansiHues {
-			bestIdx := 0
-			bestDist := 999.0
-			for j, acc := range accents {
-				h, _, _ := acc.Hsl()
-				dist := hueDist(h, targetHue)
-				if dist < bestDist {
-					bestDist = dist
-					bestIdx = j
+	case "duo":
+		bestA := dom
+		bestB := dom
+		maxDist := 0.0
+		if len(colors) >= 2 {
+			for i := 0; i < len(colors); i++ {
+				for j := i + 1; j < len(colors); j++ {
+					d := colors[i].DistanceLab(colors[j])
+					if d > maxDist {
+						maxDist = d
+						bestA = colors[i]
+						bestB = colors[j]
+					}
 				}
 			}
-			acc := accents[bestIdx]
-			ah, as, al := acc.Hsl()
-			if bestDist > 50 {
-				ah = targetHue
-			}
-			as = clamp(as*1.1, 0.5, 0.9)
-			al = clamp(al, 0.35, 0.50)
-			normalAccents[i] = colorful.Hsl(ah, as, al)
-			brightAccents[i] = colorful.Hsl(ah, clamp(as*0.9, 0.4, 0.8), clamp(al+0.15, 0.45, 0.65))
+		} else {
+			h, s, l := dom.Hsl()
+			bestB = colorful.Hsl(math.Mod(h+180, 360), clamp(s, 0.4, 0.9), clamp(l, 0.4, 0.7))
 		}
-		cursor = normalAccents[3]
 
-	case "dominant", "wal":
-		sorted := make([]colorful.Color, len(accents))
-		copy(sorted, accents)
+		hctA := toARGB(bestA).ToHct()
+		hctB := toARGB(bestB).ToHct()
+		palA := palettes.FromHueAndChroma(hctA.Hue, math.Max(hctA.Chroma, 40))
+		palB := palettes.FromHueAndChroma(hctB.Hue, math.Max(hctB.Chroma, 40))
+
+		colA := hexLower(palA.Tone(45))
+		colB := hexLower(palB.Tone(45))
+		bcolA := hexLower(palA.Tone(35))
+		bcolB := hexLower(palB.Tone(35))
+
+		for i := 0; i < 3; i++ {
+			normalAccents[i] = colA
+			brightAccents[i] = bcolA
+		}
+		for i := 3; i < 6; i++ {
+			normalAccents[i] = colB
+			brightAccents[i] = bcolB
+		}
+		cursor = colB
+
+	case "dominant":
+		sorted := make([]colorful.Color, len(colors))
+		copy(sorted, colors)
 		sort.Slice(sorted, func(i, j int) bool {
-			_, _, li := sorted[i].Hsl()
-			_, _, lj := sorted[j].Hsl()
-			return li < lj
+			return toARGB(sorted[i]).ToHct().Tone < toARGB(sorted[j]).ToHct().Tone
 		})
+		if len(sorted) == 0 {
+			sorted = append(sorted, dom)
+		}
 		for i := 0; i < 6; i++ {
 			c := sorted[i%len(sorted)]
-			h, s, l := c.Hsl()
-			normalAccents[i] = colorful.Hsl(h, clamp(s*1.1, 0.5, 0.9), clamp(l, 0.35, 0.50))
-			brightAccents[i] = colorful.Hsl(h, clamp(s*0.9, 0.4, 0.8), clamp(l+0.15, 0.45, 0.65))
+			hct := toARGB(c).ToHct()
+			pal := palettes.FromHueAndChroma(hct.Hue, math.Max(hct.Chroma, 40))
+			normalAccents[i] = hexLower(pal.Tone(45))
+			brightAccents[i] = hexLower(pal.Tone(35))
 		}
 		cursor = normalAccents[1]
 
 	default:
-		bestA := accents[0]
-		bestB := accents[1]
-		maxDist := 0.0
-		for i := 0; i < len(accents); i++ {
-			for j := i + 1; j < len(accents); j++ {
-				d := accents[i].DistanceLab(accents[j])
-				if d > maxDist {
-					maxDist = d
-					bestA = accents[i]
-					bestB = accents[j]
-				}
-			}
+		palettesList := buildAnsiPalettes(scored, seedARGB)
+		for i := 0; i < 6; i++ {
+			normalAccents[i] = hexLower(palettesList[i].Tone(45))
+			brightAccents[i] = hexLower(palettesList[i].Tone(35))
 		}
-
-		ha, sa, _ := bestA.Hsl()
-		hb, sb, _ := bestB.Hsl()
-
-		acc1 := colorful.Hsl(ha, clamp(sa*1.15, 0.5, 0.9), 0.40)
-		acc2 := colorful.Hsl(hb, clamp(sb*1.15, 0.5, 0.9), 0.40)
-
-		bacc1 := colorful.Hsl(ha, clamp(sa*0.95, 0.4, 0.8), 0.55)
-		bacc2 := colorful.Hsl(hb, clamp(sb*0.95, 0.4, 0.8), 0.55)
-
-		normalAccents[0] = acc1
-		normalAccents[1] = acc1
-		normalAccents[2] = acc1
-		normalAccents[3] = acc2
-		normalAccents[4] = acc2
-		normalAccents[5] = acc2
-
-		brightAccents[0] = bacc1
-		brightAccents[1] = bacc1
-		brightAccents[2] = bacc1
-		brightAccents[3] = bacc2
-		brightAccents[4] = bacc2
-		brightAccents[5] = bacc2
-
-		cursor = acc2
 	}
 
 	return Theme{
-		Background: bg.Hex(),
-		Foreground: fg.Hex(),
-		Cursor:     cursor.Hex(),
+		Background: bg,
+		Foreground: fg,
+		Cursor:     cursor,
 		Palette: [16]string{
-			c0.Hex(),
-			normalAccents[0].Hex(),
-			normalAccents[1].Hex(),
-			normalAccents[2].Hex(),
-			normalAccents[3].Hex(),
-			normalAccents[4].Hex(),
-			normalAccents[5].Hex(),
-			c7.Hex(),
-			c8.Hex(),
-			brightAccents[0].Hex(),
-			brightAccents[1].Hex(),
-			brightAccents[2].Hex(),
-			brightAccents[3].Hex(),
-			brightAccents[4].Hex(),
-			brightAccents[5].Hex(),
-			c15.Hex(),
+			c0,
+			normalAccents[0],
+			normalAccents[1],
+			normalAccents[2],
+			normalAccents[3],
+			normalAccents[4],
+			normalAccents[5],
+			c7,
+			c8,
+			brightAccents[0],
+			brightAccents[1],
+			brightAccents[2],
+			brightAccents[3],
+			brightAccents[4],
+			brightAccents[5],
+			c15,
 		},
 	}
 }

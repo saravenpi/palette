@@ -43,7 +43,7 @@ func newPreviewCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&mode, "mode", "m", "duo", "palette mode (duo, ansi, dominant)")
+	cmd.Flags().StringVarP(&mode, "mode", "m", "material", "palette mode (material, vibrant, expressive, tonal, duo, ansi, dominant)")
 	cmd.Flags().BoolVarP(&light, "light", "l", false, "generate light theme")
 
 	return cmd

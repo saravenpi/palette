@@ -7,8 +7,11 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+	"sort"
 
-	"github.com/cascax/colorthief-go"
+	matcolor "github.com/Nadim147c/material/v3/color"
+	"github.com/Nadim147c/material/v3/quantizer"
+	"github.com/Nadim147c/material/v3/score"
 	"github.com/lucasb-eyer/go-colorful"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -73,27 +76,75 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 		count = 16
 	}
 
-	pal, err := colorthief.GetPalette(img, count)
-	if err != nil {
-		return nil, colorful.Color{}, fmt.Errorf("failed to extract palette: %w", err)
+	bounds := img.Bounds()
+	w := bounds.Dx()
+	h := bounds.Dy()
+	if w == 0 || h == 0 {
+		return nil, colorful.Color{}, fmt.Errorf("empty image bounds")
 	}
 
+	scaled := Downscale(img, 128)
+	sb := scaled.Bounds()
+	sw := sb.Dx()
+	sh := sb.Dy()
+
+	pixels := make([]matcolor.ARGB, 0, sw*sh)
+	for y := sb.Min.Y; y < sb.Max.Y; y++ {
+		for x := sb.Min.X; x < sb.Max.X; x++ {
+			pixels = append(pixels, matcolor.ARGBFromInterface(scaled.At(x, y)))
+		}
+	}
+
+	quantized := quantizer.QuantizeCelebi(pixels, 128)
+	scored := score.Score(quantized, score.WithLimit(count))
+
 	var colors []colorful.Color
-	for _, c := range pal {
-		col, ok := colorful.MakeColor(c)
-		if ok {
+	var dom colorful.Color
+
+	if len(scored) > 0 {
+		domARGB := scored[0]
+		dom = colorful.Color{
+			R: float64(domARGB.Red()) / 255.0,
+			G: float64(domARGB.Green()) / 255.0,
+			B: float64(domARGB.Blue()) / 255.0,
+		}
+		for _, sc := range scored {
+			colors = append(colors, colorful.Color{
+				R: float64(sc.Red()) / 255.0,
+				G: float64(sc.Green()) / 255.0,
+				B: float64(sc.Blue()) / 255.0,
+			})
+		}
+	}
+
+	if len(colors) < count && len(quantized) > 0 {
+		type popColor struct {
+			c   matcolor.ARGB
+			pop int
+		}
+		var pops []popColor
+		for c, p := range quantized {
+			pops = append(pops, popColor{c: c, pop: p})
+		}
+		sort.Slice(pops, func(i, j int) bool {
+			return pops[i].pop > pops[j].pop
+		})
+		for _, pc := range pops {
+			if len(colors) >= count {
+				break
+			}
+			col := colorful.Color{
+				R: float64(pc.c.Red()) / 255.0,
+				G: float64(pc.c.Green()) / 255.0,
+				B: float64(pc.c.Blue()) / 255.0,
+			}
 			colors = append(colors, col)
 		}
 	}
 
-	domCol, err := colorthief.GetColor(img)
-	var dom colorful.Color
-	if err == nil {
-		dom, _ = colorful.MakeColor(domCol)
-	} else if len(colors) > 0 {
-		dom = colors[0]
-	} else {
-		dom = colorful.Color{R: 0.5, G: 0.5, B: 0.5}
+	if len(colors) == 0 {
+		dom = colorful.Color{R: 0.26, G: 0.52, B: 0.96}
+		colors = append(colors, dom)
 	}
 
 	return colors, dom, nil

@@ -38,6 +38,21 @@ palette sync
 palette wallpaper.jpg -p
 ```
 
+### Palette modes
+
+`palette` generates themes using Material Design 3 (Material You) with Celebi quantization and CAM16 scoring:
+
+```bash
+palette wallpaper.jpg -m material   # Default Material You harmonized ANSI theme
+palette wallpaper.jpg -m vibrant    # High-chroma dynamic scheme
+palette wallpaper.jpg -m expressive # Complementary expressive accents
+palette wallpaper.jpg -m tonal      # Calm tonal spot scheme
+palette wallpaper.jpg -m duo        # Two-accent high-contrast palette
+palette wallpaper.jpg -m dominant   # Accents ordered by tonal lightness
+```
+
+Use `-l` or `--light` with any mode to generate a light theme.
+
 ### Export to specific formats
 
 ```bash
