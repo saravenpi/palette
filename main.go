@@ -9,7 +9,7 @@ import (
 	"palette/cmd"
 )
 
-var version = "0.2.1"
+var version = "0.3.0"
 
 func main() {
 	rootCmd := cmd.NewRootCommand()

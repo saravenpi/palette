@@ -107,7 +107,7 @@ func NewRootCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&formatFlag, "format", "f", "ghostty", "output format (ghostty, kitty, alacritty, wezterm, foot, xresources, tmux, nvim, yaml, json, hex)")
-	cmd.Flags().StringVarP(&modeFlag, "mode", "m", "tonal", "palette mode (tonal, material, vibrant, expressive, duo, ansi, dominant)")
+	cmd.Flags().StringVarP(&modeFlag, "mode", "m", "tonal", "palette mode (tonal, wal, vibrant, expressive, duo, material, dominant)")
 	cmd.Flags().BoolVarP(&lightFlag, "light", "l", false, "generate light theme")
 	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview card with actual colors")
 	cmd.Flags().BoolVarP(&rawFlag, "raw", "r", false, "output raw config without styling")

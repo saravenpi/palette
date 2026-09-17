@@ -52,9 +52,10 @@ palette wallpaper.jpg -p
 
 ```bash
 palette wallpaper.jpg -m tonal      # Default Material You tonal spot scheme
-palette wallpaper.jpg -m material   # Full saturation harmonized ANSI theme
+palette wallpaper.jpg -m wal        # Pure wallpaper cluster colors (pywal style)
 palette wallpaper.jpg -m vibrant    # High-chroma dynamic scheme
 palette wallpaper.jpg -m expressive # Complementary expressive accents
+palette wallpaper.jpg -m material   # Full Material 3 dynamic color roles
 palette wallpaper.jpg -m duo        # Two-accent high-contrast palette
 palette wallpaper.jpg -m dominant   # Accents ordered by tonal lightness
 ```

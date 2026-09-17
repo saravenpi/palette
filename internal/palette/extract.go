@@ -6,10 +6,12 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"math"
 	"os"
 	"sort"
 
 	matcolor "github.com/Nadim147c/material/v3/color"
+	"github.com/Nadim147c/material/v3/num"
 	"github.com/Nadim147c/material/v3/quantizer"
 	"github.com/Nadim147c/material/v3/score"
 	"github.com/lucasb-eyer/go-colorful"
@@ -83,7 +85,7 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 		return nil, colorful.Color{}, fmt.Errorf("empty image bounds")
 	}
 
-	scaled := Downscale(img, 128)
+	scaled := Downscale(img, 400)
 	sb := scaled.Bounds()
 	sw := sb.Dx()
 	sh := sb.Dy()
@@ -98,6 +100,42 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 	quantized := quantizer.QuantizeCelebi(pixels, 128)
 	scored := score.Score(quantized, score.WithLimit(count))
 
+	type candidate struct {
+		argb  matcolor.ARGB
+		hct   matcolor.Hct
+		score float64
+	}
+
+	totalPop := 0
+	for _, p := range quantized {
+		totalPop += p
+	}
+
+	var cands []candidate
+	for argb, pop := range quantized {
+		hct := argb.ToHct()
+		prop := float64(pop) / float64(totalPop)
+		sc := prop*50.0 + hct.Chroma*1.5
+		cands = append(cands, candidate{argb, hct, sc})
+	}
+	sort.Slice(cands, func(i, j int) bool {
+		return cands[i].score > cands[j].score
+	})
+
+	var diverse []candidate
+	for _, c := range cands {
+		tooClose := false
+		for _, d := range diverse {
+			if num.DifferenceDegrees(c.hct.Hue, d.hct.Hue) < 22 && math.Abs(c.hct.Tone-d.hct.Tone) < 18 {
+				tooClose = true
+				break
+			}
+		}
+		if !tooClose {
+			diverse = append(diverse, c)
+		}
+	}
+
 	var colors []colorful.Color
 	var dom colorful.Color
 
@@ -108,42 +146,47 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 			G: float64(domARGB.Green()) / 255.0,
 			B: float64(domARGB.Blue()) / 255.0,
 		}
-		for _, sc := range scored {
-			colors = append(colors, colorful.Color{
-				R: float64(sc.Red()) / 255.0,
-				G: float64(sc.Green()) / 255.0,
-				B: float64(sc.Blue()) / 255.0,
-			})
+	} else if len(diverse) > 0 {
+		domARGB := diverse[0].argb
+		dom = colorful.Color{
+			R: float64(domARGB.Red()) / 255.0,
+			G: float64(domARGB.Green()) / 255.0,
+			B: float64(domARGB.Blue()) / 255.0,
 		}
+	} else {
+		dom = colorful.Color{R: 0.26, G: 0.52, B: 0.96}
 	}
 
-	if len(colors) < count && len(quantized) > 0 {
-		type popColor struct {
-			c   matcolor.ARGB
-			pop int
-		}
-		var pops []popColor
-		for c, p := range quantized {
-			pops = append(pops, popColor{c: c, pop: p})
-		}
-		sort.Slice(pops, func(i, j int) bool {
-			return pops[i].pop > pops[j].pop
+	for _, d := range diverse {
+		colors = append(colors, colorful.Color{
+			R: float64(d.argb.Red()) / 255.0,
+			G: float64(d.argb.Green()) / 255.0,
+			B: float64(d.argb.Blue()) / 255.0,
 		})
-		for _, pc := range pops {
-			if len(colors) >= count {
+	}
+
+	for _, sc := range scored {
+		if len(colors) >= count {
+			break
+		}
+		c := colorful.Color{
+			R: float64(sc.Red()) / 255.0,
+			G: float64(sc.Green()) / 255.0,
+			B: float64(sc.Blue()) / 255.0,
+		}
+		exists := false
+		for _, existing := range colors {
+			if existing.DistanceLab(c) < 0.05 {
+				exists = true
 				break
 			}
-			col := colorful.Color{
-				R: float64(pc.c.Red()) / 255.0,
-				G: float64(pc.c.Green()) / 255.0,
-				B: float64(pc.c.Blue()) / 255.0,
-			}
-			colors = append(colors, col)
+		}
+		if !exists {
+			colors = append(colors, c)
 		}
 	}
 
 	if len(colors) == 0 {
-		dom = colorful.Color{R: 0.26, G: 0.52, B: 0.96}
 		colors = append(colors, dom)
 	}
 
