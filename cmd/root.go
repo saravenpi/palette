@@ -57,9 +57,11 @@ func NewRootCommand() *cobra.Command {
 				if err := os.WriteFile(outputFlag, []byte(rawFormatted), 0644); err != nil {
 					return fmt.Errorf("failed to write output file: %w", err)
 				}
-				if (term.IsTerminal(int(os.Stdout.Fd())) || previewFlag) && !rawFlag {
+				if previewFlag {
 					fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
 					fmt.Println()
+				}
+				if term.IsTerminal(int(os.Stdout.Fd())) && !rawFlag {
 					fmt.Print(palette.RenderStyledConfig(theme, formatFlag))
 					fmt.Printf("\nTheme written to %s\n", outputFlag)
 				}
@@ -72,8 +74,11 @@ func NewRootCommand() *cobra.Command {
 				return nil
 			}
 
-			fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
-			fmt.Println()
+			if previewFlag {
+				fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
+				fmt.Println()
+			}
+
 			fmt.Print(palette.RenderStyledConfig(theme, formatFlag))
 			return nil
 		},
@@ -82,7 +87,7 @@ func NewRootCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&formatFlag, "format", "f", "ghostty", "output format (ghostty, kitty, alacritty, wezterm, foot, xresources, json, hex)")
 	cmd.Flags().StringVarP(&modeFlag, "mode", "m", "duo", "palette mode (duo, ansi, dominant)")
 	cmd.Flags().BoolVarP(&lightFlag, "light", "l", false, "generate light theme")
-	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview with actual colors")
+	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview card with actual colors")
 	cmd.Flags().BoolVarP(&rawFlag, "raw", "r", false, "output raw config without styling")
 	cmd.Flags().StringVarP(&outputFlag, "output", "o", "", "write theme to file")
 	cmd.Flags().IntVar(&maxDimFlag, "max-dim", 400, "maximum image dimension before color extraction")
