@@ -1,10 +1,10 @@
 package palette
 
 type Theme struct {
-	Background string     `json:"background"`
-	Foreground string     `json:"foreground"`
-	Cursor     string     `json:"cursor"`
-	Palette    [16]string `json:"palette"`
+	Background string     `json:"background" yaml:"background"`
+	Foreground string     `json:"foreground" yaml:"foreground"`
+	Cursor     string     `json:"cursor" yaml:"cursor"`
+	Palette    [16]string `json:"palette" yaml:"palette"`
 }
 
 type Options struct {

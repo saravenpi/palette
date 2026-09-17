@@ -55,6 +55,34 @@ func TestFormatTheme(t *testing.T) {
 		t.Errorf("json output missing background: %s", jsonOut)
 	}
 
+	tmuxOut, err := FormatTheme(theme, "tmux")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(tmuxOut, "set -g status-style") {
+		t.Errorf("tmux output missing status-style: %s", tmuxOut)
+	}
+
+	nvimOut, err := FormatTheme(theme, "nvim")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(nvimOut, "M.colors") {
+		t.Errorf("nvim output missing M.colors: %s", nvimOut)
+	}
+
+	yamlOut, err := FormatTheme(theme, "yaml")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	parsed, err := ParseYAML([]byte(yamlOut))
+	if err != nil {
+		t.Fatalf("failed to parse yaml: %v", err)
+	}
+	if parsed.Background != theme.Background {
+		t.Errorf("expected bg %s, got %s", theme.Background, parsed.Background)
+	}
+
 	hexOut, err := FormatTheme(theme, "hex")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

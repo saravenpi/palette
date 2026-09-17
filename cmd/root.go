@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -18,6 +19,7 @@ var (
 	rawFlag     bool
 	outputFlag  string
 	maxDimFlag  int
+	syncFlag    bool
 )
 
 func NewRootCommand() *cobra.Command {
@@ -53,6 +55,26 @@ func NewRootCommand() *cobra.Command {
 				return err
 			}
 
+			if syncFlag {
+				home, err := os.UserHomeDir()
+				if err != nil {
+					return err
+				}
+				palettePath := filepath.Join(home, ".palette.yml")
+				if err := palette.SavePaletteFile(palettePath, theme); err != nil {
+					return err
+				}
+				syncResults, err := palette.Sync(theme, true)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("saved to %s\n", palettePath)
+				for _, r := range syncResults {
+					fmt.Println(r)
+				}
+				return nil
+			}
+
 			if outputFlag != "" {
 				if err := os.WriteFile(outputFlag, []byte(rawFormatted), 0644); err != nil {
 					return fmt.Errorf("failed to write output file: %w", err)
@@ -84,15 +106,17 @@ func NewRootCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&formatFlag, "format", "f", "ghostty", "output format (ghostty, kitty, alacritty, wezterm, foot, xresources, json, hex)")
+	cmd.Flags().StringVarP(&formatFlag, "format", "f", "ghostty", "output format (ghostty, kitty, alacritty, wezterm, foot, xresources, tmux, nvim, yaml, json, hex)")
 	cmd.Flags().StringVarP(&modeFlag, "mode", "m", "duo", "palette mode (duo, ansi, dominant)")
 	cmd.Flags().BoolVarP(&lightFlag, "light", "l", false, "generate light theme")
 	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview card with actual colors")
 	cmd.Flags().BoolVarP(&rawFlag, "raw", "r", false, "output raw config without styling")
 	cmd.Flags().StringVarP(&outputFlag, "output", "o", "", "write theme to file")
 	cmd.Flags().IntVar(&maxDimFlag, "max-dim", 400, "maximum image dimension before color extraction")
+	cmd.Flags().BoolVarP(&syncFlag, "sync", "s", false, "save theme to ~/.palette.yml and sync Kitty, Tmux, Neovim")
 
 	cmd.AddCommand(newPreviewCommand())
+	cmd.AddCommand(newSyncCommand())
 
 	return cmd
 }
