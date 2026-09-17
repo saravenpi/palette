@@ -37,7 +37,7 @@ func hexLower(c matcolor.ARGB) string {
 
 func getVariant(mode string) dynamic.Variant {
 	switch mode {
-	case "vibrant":
+	case "material", "vibrant":
 		return dynamic.VariantVibrant
 	case "expressive":
 		return dynamic.VariantExpressive
@@ -50,7 +50,7 @@ func getVariant(mode string) dynamic.Variant {
 	case "fruit_salad":
 		return dynamic.VariantFruitSalad
 	default:
-		return dynamic.VariantVibrant
+		return dynamic.VariantTonalSpot
 	}
 }
 

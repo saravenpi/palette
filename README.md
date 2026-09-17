@@ -43,10 +43,10 @@ palette wallpaper.jpg -p
 `palette` generates themes using Material Design 3 (Material You) with Celebi quantization and CAM16 scoring:
 
 ```bash
-palette wallpaper.jpg -m material   # Default Material You harmonized ANSI theme
+palette wallpaper.jpg -m tonal      # Default Material You tonal spot scheme
+palette wallpaper.jpg -m material   # Full saturation harmonized ANSI theme
 palette wallpaper.jpg -m vibrant    # High-chroma dynamic scheme
 palette wallpaper.jpg -m expressive # Complementary expressive accents
-palette wallpaper.jpg -m tonal      # Calm tonal spot scheme
 palette wallpaper.jpg -m duo        # Two-accent high-contrast palette
 palette wallpaper.jpg -m dominant   # Accents ordered by tonal lightness
 ```
