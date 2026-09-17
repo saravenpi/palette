@@ -127,7 +127,7 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 	for argb, pop := range quantized {
 		hct := argb.ToHct()
 		prop := float64(pop) / float64(totalPop)
-		sc := prop*50.0 + hct.Chroma*1.5
+		sc := prop*40.0 + hct.Chroma*2.0
 		cands = append(cands, candidate{argb, hct, sc})
 	}
 	sort.Slice(cands, func(i, j int) bool {
@@ -138,7 +138,7 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 	for _, c := range cands {
 		tooClose := false
 		for _, d := range diverse {
-			if num.DifferenceDegrees(c.hct.Hue, d.hct.Hue) < 22 && math.Abs(c.hct.Tone-d.hct.Tone) < 18 {
+			if num.DifferenceDegrees(c.hct.Hue, d.hct.Hue) < 20 && math.Abs(c.hct.Tone-d.hct.Tone) < 15 {
 				tooClose = true
 				break
 			}
@@ -169,26 +169,26 @@ func ExtractColors(img image.Image, count int) ([]colorful.Color, colorful.Color
 		dom = colorful.Color{R: 0.26, G: 0.52, B: 0.96}
 	}
 
-	for _, d := range diverse {
+	for _, sc := range scored {
 		colors = append(colors, colorful.Color{
-			R: float64(d.argb.Red()) / 255.0,
-			G: float64(d.argb.Green()) / 255.0,
-			B: float64(d.argb.Blue()) / 255.0,
+			R: float64(sc.Red()) / 255.0,
+			G: float64(sc.Green()) / 255.0,
+			B: float64(sc.Blue()) / 255.0,
 		})
 	}
 
-	for _, sc := range scored {
+	for _, d := range diverse {
 		if len(colors) >= count {
 			break
 		}
 		c := colorful.Color{
-			R: float64(sc.Red()) / 255.0,
-			G: float64(sc.Green()) / 255.0,
-			B: float64(sc.Blue()) / 255.0,
+			R: float64(d.argb.Red()) / 255.0,
+			G: float64(d.argb.Green()) / 255.0,
+			B: float64(d.argb.Blue()) / 255.0,
 		}
 		exists := false
 		for _, existing := range colors {
-			if existing.DistanceLab(c) < 0.05 {
+			if existing.DistanceLab(c) < 0.08 {
 				exists = true
 				break
 			}

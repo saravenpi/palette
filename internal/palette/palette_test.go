@@ -143,7 +143,7 @@ func TestGenerateTheme(t *testing.T) {
 		t.Errorf("invalid ansi theme: %+v", themeAnsi)
 	}
 
-	modes := []string{"material", "vibrant", "expressive", "tonal", "dominant"}
+	modes := []string{"material", "vibrant", "expressive", "tonal", "dominant", "wal", "duo"}
 	for _, m := range modes {
 		for _, light := range []bool{false, true} {
 			th := GenerateTheme(colors, dom, Options{Mode: m, Light: light})
@@ -154,6 +154,10 @@ func TestGenerateTheme(t *testing.T) {
 				if len(c) != 7 || !strings.HasPrefix(c, "#") {
 					t.Fatalf("mode %s (light=%v) invalid palette color %d: %s", m, light, i, c)
 				}
+			}
+			preview := RenderPreview(th, "test.png", m, light)
+			if !strings.Contains(preview, "Normal ANSI Colors:") {
+				t.Fatalf("preview output incomplete for mode %s", m)
 			}
 		}
 	}

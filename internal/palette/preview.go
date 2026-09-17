@@ -15,8 +15,8 @@ func ContrastColor(hex string) color.Color {
 	if err != nil {
 		return lipgloss.Color("#ffffff")
 	}
-	_, _, l := c.Hsl()
-	if l > 0.55 {
+	hct := toARGB(c).ToHct()
+	if hct.Tone > 55 {
 		return lipgloss.Color("#000000")
 	}
 	return lipgloss.Color("#ffffff")

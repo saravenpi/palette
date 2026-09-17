@@ -55,7 +55,7 @@ func Sync(t Theme, reload bool) ([]string, error) {
 	results = append(results, fmt.Sprintf("nvim  -> %s", nvimLua))
 
 	nvimColors := filepath.Join(home, ".config", "nvim", "colors", "palette.lua")
-	_ = writeFormatted(nvimColors, "require(\"palette\").load()\n")
+	_ = writeFormatted(nvimColors, "package.loaded[\"palette\"] = nil\nrequire(\"palette\").load()\n")
 
 	if reload {
 		reloaded := reloadApplications(tmuxConf)
@@ -95,13 +95,15 @@ func reloadApplications(tmuxConf string) []string {
 func reloadNvimSockets() {
 	var sockets []string
 
-	tmpSockets, _ := filepath.Glob("/tmp/nvim*/0")
+	tmpSockets, _ := filepath.Glob("/tmp/nvim*/*")
 	sockets = append(sockets, tmpSockets...)
 
 	xdgRuntime := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntime != "" {
-		xdgSockets, _ := filepath.Glob(filepath.Join(xdgRuntime, "nvim.*.0"))
+		xdgSockets, _ := filepath.Glob(filepath.Join(xdgRuntime, "nvim*"))
 		sockets = append(sockets, xdgSockets...)
+		xdgSubSockets, _ := filepath.Glob(filepath.Join(xdgRuntime, "nvim*", "*"))
+		sockets = append(sockets, xdgSubSockets...)
 	}
 
 	for _, sock := range sockets {
