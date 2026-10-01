@@ -1,122 +1,37 @@
 package cmd
 
 import (
-	"fmt"
+	"context"
 	"os"
-	"path/filepath"
 
+	"charm.land/fang/v2"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
-
-	"palette/internal/palette"
 )
 
-var (
-	formatFlag  string
-	modeFlag    string
-	lightFlag   bool
-	previewFlag bool
-	rawFlag     bool
-	outputFlag  string
-	maxDimFlag  int
-	syncFlag    bool
-)
+var version = "dev"
 
-func NewRootCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "palette <image-path>",
-		Short: "Generate terminal color palettes from images",
-		Long: `palette extracts dominant and accent colors from an image to generate harmonious
-16-color ANSI terminal palettes and themes for Ghostty, Kitty, Alacritty, WezTerm, and more.`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			imagePath := args[0]
+var rootCmd = &cobra.Command{
+	Use:   "palette",
+	Short: "Generate terminal color palettes from images",
+	Long: `palette extracts dominant and accent colors from an image to generate harmonious
+16-color ANSI terminal palettes and themes for Ghostty, Kitty, Alacritty, WezTerm, and more.
 
-			img, err := palette.LoadImage(imagePath)
-			if err != nil {
-				return err
-			}
+Without a subcommand it prints this help.`,
+	DisableAutoGenTag: true,
+}
 
-			scaled := palette.Downscale(img, maxDimFlag)
-			colors, dom, err := palette.ExtractColors(scaled, 16)
-			if err != nil {
-				return err
-			}
-
-			opts := palette.Options{
-				Mode:   modeFlag,
-				Light:  lightFlag,
-				MaxDim: maxDimFlag,
-			}
-
-			theme := palette.GenerateTheme(colors, dom, opts)
-			rawFormatted, err := palette.FormatTheme(theme, formatFlag)
-			if err != nil {
-				return err
-			}
-
-			if syncFlag {
-				home, err := os.UserHomeDir()
-				if err != nil {
-					return err
-				}
-				palettePath := filepath.Join(home, ".palette.yml")
-				if err := palette.SavePaletteFile(palettePath, theme); err != nil {
-					return err
-				}
-				syncResults, err := palette.Sync(theme, true)
-				if err != nil {
-					return err
-				}
-				fmt.Printf("saved to %s\n", palettePath)
-				for _, r := range syncResults {
-					fmt.Println(r)
-				}
-				return nil
-			}
-
-			if outputFlag != "" {
-				if err := os.WriteFile(outputFlag, []byte(rawFormatted), 0644); err != nil {
-					return fmt.Errorf("failed to write output file: %w", err)
-				}
-				if previewFlag {
-					fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
-					fmt.Println()
-				}
-				if term.IsTerminal(int(os.Stdout.Fd())) && !rawFlag {
-					fmt.Print(palette.RenderStyledConfig(theme, formatFlag))
-					fmt.Printf("\nTheme written to %s\n", outputFlag)
-				}
-				return nil
-			}
-
-			isTTY := term.IsTerminal(int(os.Stdout.Fd()))
-			if (!isTTY && !previewFlag) || rawFlag {
-				fmt.Print(rawFormatted)
-				return nil
-			}
-
-			if previewFlag {
-				fmt.Println(palette.RenderPreview(theme, imagePath, modeFlag, lightFlag))
-				fmt.Println()
-			}
-
-			fmt.Print(palette.RenderStyledConfig(theme, formatFlag))
-			return nil
-		},
+// Execute runs the palette command tree through fang (styled help and errors,
+// --version, man and completion commands) and exits non-zero on error. Fang
+// already renders the styled error, so the wrapper only forwards the exit code.
+func Execute() {
+	if fang.Execute(context.Background(), rootCmd, fang.WithVersion(version)) != nil {
+		os.Exit(1)
 	}
+}
 
-	cmd.Flags().StringVarP(&formatFlag, "format", "f", "ghostty", "output format (ghostty, kitty, alacritty, wezterm, foot, xresources, tmux, nvim, yaml, json, hex)")
-	cmd.Flags().StringVarP(&modeFlag, "mode", "m", "tonal", "palette mode (tonal, wal, vibrant, expressive, duo, material, dominant)")
-	cmd.Flags().BoolVarP(&lightFlag, "light", "l", false, "generate light theme")
-	cmd.Flags().BoolVarP(&previewFlag, "preview", "p", false, "show lipgloss preview card with actual colors")
-	cmd.Flags().BoolVarP(&rawFlag, "raw", "r", false, "output raw config without styling")
-	cmd.Flags().StringVarP(&outputFlag, "output", "o", "", "write theme to file")
-	cmd.Flags().IntVar(&maxDimFlag, "max-dim", 400, "maximum image dimension before color extraction")
-	cmd.Flags().BoolVarP(&syncFlag, "sync", "s", false, "save theme to ~/.palette.yml and sync Kitty, Tmux, Neovim")
-
-	cmd.AddCommand(newPreviewCommand())
-	cmd.AddCommand(newSyncCommand())
-
-	return cmd
+func init() {
+	rootCmd.SetVersionTemplate("{{.Name}} {{.Version}}\n")
+	rootCmd.AddCommand(newGenerateCmd())
+	rootCmd.AddCommand(newPreviewCommand())
+	rootCmd.AddCommand(newSyncCommand())
 }
