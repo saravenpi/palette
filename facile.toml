@@ -1,0 +1,9 @@
+# facile discovers this file to install palette from source.
+# palette has no release assets — facile builds from the tagged source.
+
+name = "palette"
+summary = "Extract color palettes from images and sync terminal themes"
+repo = "saravenpi/palette"
+bin = "palette"
+build = "go"
+goVersionVar = "palette/cmd.version"
