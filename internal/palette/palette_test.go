@@ -59,8 +59,11 @@ func TestFormatTheme(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(tmuxOut, "set -g status-style") {
-		t.Errorf("tmux output missing status-style: %s", tmuxOut)
+	if !strings.Contains(tmuxOut, "set -g @palette_color0 \"#1b1a1f\"") {
+		t.Errorf("tmux output missing @palette_color0: %s", tmuxOut)
+	}
+	if strings.Contains(tmuxOut, "status-style") || strings.Contains(tmuxOut, "window-status-format") {
+		t.Errorf("tmux output must not set status styles: %s", tmuxOut)
 	}
 
 	nvimOut, err := FormatTheme(theme, "nvim")
@@ -203,8 +206,8 @@ func TestFormatFoot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(footOut, "[colors]") {
-		t.Errorf("foot output missing [colors]: %s", footOut)
+	if !strings.Contains(footOut, "[colors-dark]") {
+		t.Errorf("foot output missing [colors-dark]: %s", footOut)
 	}
 	if !strings.Contains(footOut, "background=14161b") {
 		t.Errorf("foot output missing background: %s", footOut)
@@ -212,8 +215,11 @@ func TestFormatFoot(t *testing.T) {
 	if !strings.Contains(footOut, "selection-foreground=14161b") {
 		t.Errorf("foot output missing selection-foreground: %s", footOut)
 	}
-	if !strings.Contains(footOut, "color=14161b fdd5fa") {
-		t.Errorf("foot output missing cursor color: %s", footOut)
+	if !strings.Contains(footOut, "cursor=14161b fdd5fa") {
+		t.Errorf("foot output missing cursor pair: %s", footOut)
+	}
+	if strings.Contains(footOut, "[colors]") || strings.Contains(footOut, "[cursor]") {
+		t.Errorf("foot output uses a section removed in foot 1.26/1.28: %s", footOut)
 	}
 }
 
@@ -226,4 +232,3 @@ func TestDefaultPalettePath(t *testing.T) {
 		t.Errorf("expected non-empty default palette path")
 	}
 }
-

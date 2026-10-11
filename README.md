@@ -88,11 +88,28 @@ include palette.conf
 
 ### Tmux
 
-Add to the end of `~/.tmux.conf`:
+Source the snippet from `~/.config/tmux/tmux.conf`:
 
 ```tmux
 source-file -q ~/.config/tmux/palette.conf
 ```
+
+The tmux snippet only exposes colors: `@palette_color0` through `@palette_color15`,
+`@palette_bg`, `@palette_fg`, `@palette_cursor` and the `@paper_*` aliases. It sets no
+style of its own, so your own status bar keeps its look. Reference a value as
+`#{@palette_color8}` from any style or format.
+
+### Foot
+
+Add to `~/.config/foot/foot.ini`:
+
+```ini
+[main]
+include=~/.config/foot/palette.ini
+```
+
+The snippet is a `[colors-dark]` section, the format foot 1.26 and later expect.
+`[colors]` and `[cursor] color=` were removed upstream in 1.26.0 and 1.28.0.
 
 ### Neovim
 
