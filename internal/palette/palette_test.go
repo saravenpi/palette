@@ -187,3 +187,43 @@ func TestFormatSway(t *testing.T) {
 	}
 }
 
+func TestFormatFoot(t *testing.T) {
+	theme := Theme{
+		Background: "#14161b",
+		Foreground: "#c0caf5",
+		Cursor:     "#fdd5fa",
+		Palette: [16]string{
+			"#14161b", "#f7768e", "#9ece6a", "#e0af68",
+			"#7aa2f7", "#bb9af7", "#7dcfff", "#a9b1d6",
+			"#2e3440", "#f7768e", "#9ece6a", "#e0af68",
+			"#7aa2f7", "#bb9af7", "#7dcfff", "#c0caf5",
+		},
+	}
+	footOut, err := FormatTheme(theme, "foot")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(footOut, "[colors]") {
+		t.Errorf("foot output missing [colors]: %s", footOut)
+	}
+	if !strings.Contains(footOut, "background=14161b") {
+		t.Errorf("foot output missing background: %s", footOut)
+	}
+	if !strings.Contains(footOut, "selection-foreground=14161b") {
+		t.Errorf("foot output missing selection-foreground: %s", footOut)
+	}
+	if !strings.Contains(footOut, "color=14161b fdd5fa") {
+		t.Errorf("foot output missing cursor color: %s", footOut)
+	}
+}
+
+func TestDefaultPalettePath(t *testing.T) {
+	path, err := DefaultPalettePath()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if path == "" {
+		t.Errorf("expected non-empty default palette path")
+	}
+}
+

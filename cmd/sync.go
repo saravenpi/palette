@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/spf13/cobra"
 
 	"palette/internal/palette"
 )
 
 // resolvePalettePath determines the palette file to sync. It checks positional
-// args first, then the --file flag, and finally falls back to ~/.palette.yml.
+// args first, then the --file flag, and finally falls back to the default palette path.
 func resolvePalettePath(fileFlag string, args []string) (string, error) {
 	if len(args) > 0 {
 		return args[0], nil
@@ -18,11 +15,7 @@ func resolvePalettePath(fileFlag string, args []string) (string, error) {
 	if fileFlag != "" {
 		return fileFlag, nil
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".palette.yml"), nil
+	return palette.DefaultPalettePath()
 }
 
 // printSyncResults prints each line reported by palette.Sync.
@@ -56,14 +49,20 @@ func runSyncCommand(cmd *cobra.Command, args []string) error {
 func newSyncCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sync [palette.yml]",
-		Short: "Sync palette to Kitty, Tmux, Neovim, and Sway",
-		Long: `sync reads a palette YAML file (defaults to ~/.palette.yml), compiles native config
-fragments for Kitty, Tmux, Neovim, and Sway, writes them to their config paths, and signals running
-applications to hot-reload.`,
+		Short: "Sync palette to Kitty, Tmux, Neovim, Sway, and Foot",
+		Long: `sync reads a palette YAML file (defaults to ~/.config/palette/config.yml or ~/.palette.yml),
+compiles native config fragments for Kitty, Tmux, Neovim, Sway, and Foot, writes them to their config paths,
+and signals running applications to hot-reload.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: runSyncCommand,
 	}
-	cmd.Flags().StringVarP(new(string), "file", "f", "", "path to palette file (default ~/.palette.yml)")
+	cmd.Flags().StringVarP(
+		new(string),
+		"file",
+		"f",
+		"",
+		"path to palette file (default ~/.config/palette/config.yml or ~/.palette.yml)",
+	)
 	cmd.Flags().BoolVar(new(bool), "no-reload", false, "write configs without sending reload signals")
 	return cmd
 }

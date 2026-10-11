@@ -19,6 +19,9 @@ func newRootCommand() *cobra.Command {
 
 Without a subcommand it prints this help.`,
 		DisableAutoGenTag: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
 	}
 	rootCmd.SetVersionTemplate("{{.Name}} {{.Version}}\n")
 	rootCmd.AddCommand(newGenerateCmd())

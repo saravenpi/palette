@@ -22,7 +22,25 @@ func syncTargets(home string) []syncTarget {
 		{name: "tmux", format: "tmux", path: filepath.Join(home, ".config", "tmux", "palette.conf")},
 		{name: "nvim", format: "nvim", path: filepath.Join(home, ".config", "nvim", "lua", "palette.lua")},
 		{name: "sway", format: "sway", path: filepath.Join(home, ".config", "sway", "palette.conf")},
+		{name: "foot", format: "foot", path: filepath.Join(home, ".config", "foot", "palette.ini")},
 	}
+}
+
+// DefaultPalettePath returns the resolved path to the user's palette file.
+func DefaultPalettePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	configPath := filepath.Join(home, ".config", "palette", "config.yml")
+	if _, err := os.Stat(configPath); err == nil {
+		return configPath, nil
+	}
+	legacyPath := filepath.Join(home, ".palette.yml")
+	if _, err := os.Stat(legacyPath); err == nil {
+		return legacyPath, nil
+	}
+	return configPath, nil
 }
 
 // LoadPaletteFile reads and parses a theme YAML file at the given path.

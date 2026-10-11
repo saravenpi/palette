@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -46,7 +45,7 @@ func newGenerateCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&f.raw, "raw", "r", false, "output raw config without styling")
 	cmd.Flags().StringVarP(&f.output, "output", "o", "", "write theme to file")
 	cmd.Flags().IntVar(&f.maxDim, "max-dim", 400, "maximum image dimension before color extraction")
-	cmd.Flags().BoolVarP(&f.sync, "sync", "s", false, "save theme to ~/.palette.yml and sync Kitty, Tmux, Neovim, Sway")
+	cmd.Flags().BoolVarP(&f.sync, "sync", "s", false, "save theme to config and sync Kitty, Tmux, Neovim, Sway, Foot")
 
 	return cmd
 }
@@ -77,11 +76,10 @@ func runGenerate(imagePath string, f generateFlags) error {
 }
 
 func runSync(theme palette.Theme, imagePath string, f generateFlags, rawFormatted string) error {
-	home, err := os.UserHomeDir()
+	palettePath, err := palette.DefaultPalettePath()
 	if err != nil {
 		return err
 	}
-	palettePath := filepath.Join(home, ".palette.yml")
 	if err := palette.SavePaletteFile(palettePath, theme); err != nil {
 		return err
 	}
