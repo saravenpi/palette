@@ -162,3 +162,28 @@ func TestGenerateTheme(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatSway(t *testing.T) {
+	theme := Theme{
+		Background: "#14161b",
+		Foreground: "#c0caf5",
+		Cursor:     "#FDD5FA",
+		Palette: [16]string{
+			"#14161b", "#f7768e", "#9ece6a", "#e0af68",
+			"#7aa2f7", "#bb9af7", "#7dcfff", "#a9b1d6",
+			"#2e3440", "#f7768e", "#9ece6a", "#e0af68",
+			"#7aa2f7", "#bb9af7", "#7dcfff", "#c0caf5",
+		},
+	}
+	swayOut, err := FormatTheme(theme, "sway")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(swayOut, "client.focused #FDD5FA #14161b #c0caf5 #FDD5FA #FDD5FA") {
+		t.Errorf("sway output missing client.focused: %s", swayOut)
+	}
+	if !strings.Contains(swayOut, "set $palette_bg #14161b") {
+		t.Errorf("sway output missing set $palette_bg: %s", swayOut)
+	}
+}
+

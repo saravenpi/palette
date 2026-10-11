@@ -6,18 +6,37 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+
+	"palette/internal/palette/formats"
 )
 
+type syncTarget struct {
+	name   string
+	format string
+	path   string
+}
+
+func syncTargets(home string) []syncTarget {
+	return []syncTarget{
+		{name: "kitty", format: "kitty", path: filepath.Join(home, ".config", "kitty", "palette.conf")},
+		{name: "tmux", format: "tmux", path: filepath.Join(home, ".config", "tmux", "palette.conf")},
+		{name: "nvim", format: "nvim", path: filepath.Join(home, ".config", "nvim", "lua", "palette.lua")},
+		{name: "sway", format: "sway", path: filepath.Join(home, ".config", "sway", "palette.conf")},
+	}
+}
+
+// LoadPaletteFile reads and parses a theme YAML file at the given path.
 func LoadPaletteFile(path string) (Theme, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Theme{}, fmt.Errorf("palette file not found at %s: %w", path, err)
 	}
-	return ParseYAML(data)
+	return formats.ParseYAML(data)
 }
 
+// SavePaletteFile serializes a theme to YAML and writes it to path.
 func SavePaletteFile(path string, t Theme) error {
-	data, err := formatYAML(t)
+	data, err := formats.FormatTheme(t, "yaml")
 	if err != nil {
 		return err
 	}
@@ -28,40 +47,30 @@ func SavePaletteFile(path string, t Theme) error {
 	return os.WriteFile(path, []byte(data), 0644)
 }
 
+// Sync compiles theme snippets for supported applications and hot-reloads them.
 func Sync(t Theme, reload bool) ([]string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
-
 	var results []string
-
-	kittyConf := filepath.Join(home, ".config", "kitty", "palette.conf")
-	if err := writeFormatted(kittyConf, formatKitty(t)); err != nil {
-		return nil, err
+	for _, tgt := range syncTargets(home) {
+		out, err := formats.FormatTheme(t, tgt.format)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeFormatted(tgt.path, out); err != nil {
+			return nil, err
+		}
+		results = append(results, fmt.Sprintf("%-5s -> %s", tgt.name, tgt.path))
 	}
-	results = append(results, fmt.Sprintf("kitty -> %s", kittyConf))
-
-	tmuxConf := filepath.Join(home, ".config", "tmux", "palette.conf")
-	if err := writeFormatted(tmuxConf, formatTmux(t)); err != nil {
-		return nil, err
-	}
-	results = append(results, fmt.Sprintf("tmux  -> %s", tmuxConf))
-
-	nvimLua := filepath.Join(home, ".config", "nvim", "lua", "palette.lua")
-	if err := writeFormatted(nvimLua, formatNvim(t)); err != nil {
-		return nil, err
-	}
-	results = append(results, fmt.Sprintf("nvim  -> %s", nvimLua))
-
 	nvimColors := filepath.Join(home, ".config", "nvim", "colors", "palette.lua")
-	_ = writeFormatted(nvimColors, "package.loaded[\"palette\"] = nil\nrequire(\"palette\").load()\n")
-
-	if reload {
-		reloaded := reloadApplications(tmuxConf)
-		results = append(results, reloaded...)
+	if err := writeFormatted(nvimColors, "package.loaded[\"palette\"] = nil\nrequire(\"palette\").load()\n"); err != nil {
+		return nil, err
 	}
-
+	if reload {
+		results = append(results, reloadApplications(filepath.Join(home, ".config", "tmux", "palette.conf"))...)
+	}
 	return results, nil
 }
 
@@ -75,29 +84,24 @@ func writeFormatted(path string, content string) error {
 
 func reloadApplications(tmuxConf string) []string {
 	var msgs []string
-
 	uid := strconv.Itoa(os.Getuid())
-	cmdKitty := exec.Command("pkill", "-SIGUSR1", "-u", uid, "kitty")
-	if err := cmdKitty.Run(); err == nil {
+	if err := exec.Command("pkill", "-SIGUSR1", "-u", uid, "kitty").Run(); err == nil {
 		msgs = append(msgs, "reloaded kitty via SIGUSR1")
 	}
-
-	cmdTmux := exec.Command("tmux", "source-file", tmuxConf)
-	if err := cmdTmux.Run(); err == nil {
+	if err := exec.Command("tmux", "source-file", tmuxConf).Run(); err == nil {
 		msgs = append(msgs, "reloaded tmux session")
 	}
-
+	if err := exec.Command("swaymsg", "reload").Run(); err == nil {
+		msgs = append(msgs, "reloaded sway session")
+	}
 	reloadNvimSockets()
-
 	return msgs
 }
 
 func reloadNvimSockets() {
 	var sockets []string
-
 	tmpSockets, _ := filepath.Glob("/tmp/nvim*/*")
 	sockets = append(sockets, tmpSockets...)
-
 	xdgRuntime := os.Getenv("XDG_RUNTIME_DIR")
 	if xdgRuntime != "" {
 		xdgSockets, _ := filepath.Glob(filepath.Join(xdgRuntime, "nvim*"))
@@ -105,9 +109,9 @@ func reloadNvimSockets() {
 		xdgSubSockets, _ := filepath.Glob(filepath.Join(xdgRuntime, "nvim*", "*"))
 		sockets = append(sockets, xdgSubSockets...)
 	}
-
 	for _, sock := range sockets {
-		cmd := exec.Command("nvim", "--server", sock, "--remote-send", "<Cmd>colorscheme palette<CR>")
-		_ = cmd.Run()
+		if err := exec.Command("nvim", "--server", sock, "--remote-send", "<Cmd>colorscheme palette<CR>").Run(); err != nil {
+			continue
+		}
 	}
 }

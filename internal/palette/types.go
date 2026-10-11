@@ -1,15 +1,8 @@
 package palette
 
-type Theme struct {
-	Background string     `json:"background" yaml:"background"`
-	Foreground string     `json:"foreground" yaml:"foreground"`
-	Cursor     string     `json:"cursor" yaml:"cursor"`
-	Palette    [16]string `json:"palette" yaml:"palette"`
-}
+import "palette/internal/palette/formats"
 
-type Options struct {
-	Mode      string
-	Light     bool
-	MaxDim    int
-	NumColors int
+// ParseYAML parses a YAML theme definition into a Theme struct.
+func ParseYAML(data []byte) (Theme, error) {
+	return formats.ParseYAML(data)
 }

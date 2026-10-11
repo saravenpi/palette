@@ -9,26 +9,40 @@ func formatNvim(t Theme) string {
 	var b strings.Builder
 	b.WriteString("local M = {}\n\n")
 	b.WriteString("M.colors = {\n")
+	writeColorFields(&b, t)
+	b.WriteString("}\n\n")
+	b.WriteString("function M.load()\n")
+	b.WriteString("  if vim.g.colors_name then\n")
+	b.WriteString(`    vim.cmd("hi clear")`)
+	b.WriteString("\n  end\n")
+	b.WriteString("  vim.o.termguicolors = true\n")
+	b.WriteString(`  vim.g.colors_name = "palette"`)
+	b.WriteString("\n  local c = M.colors\n")
+	b.WriteString("  local hl = vim.api.nvim_set_hl\n")
+	writeHighlights(&b, t)
+	b.WriteString("end\n\n")
+	b.WriteString("M.lualine_theme = {\n")
+	writeLualine(&b, t)
+	b.WriteString("}\n\n")
+	b.WriteString("return M\n")
+	return b.String()
+}
+
+func writeColorFields(b *strings.Builder, t Theme) {
+	names := []string{
+		"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+		"bright_black", "bright_red", "bright_green", "bright_yellow",
+		"bright_blue", "bright_magenta", "bright_cyan", "bright_white",
+	}
 	b.WriteString(fmt.Sprintf("  bg = \"%s\",\n", t.Background))
 	b.WriteString(fmt.Sprintf("  fg = \"%s\",\n", t.Foreground))
 	b.WriteString(fmt.Sprintf("  cursor = \"%s\",\n", t.Cursor))
-	names := []string{
-		"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
-		"bright_black", "bright_red", "bright_green", "bright_yellow", "bright_blue", "bright_magenta", "bright_cyan", "bright_white",
-	}
 	for i, name := range names {
 		b.WriteString(fmt.Sprintf("  %s = \"%s\",\n", name, t.Palette[i]))
 	}
-	b.WriteString("}\n\n")
-	b.WriteString(`function M.load()
-  if vim.g.colors_name then
-    vim.cmd("hi clear")
-  end
-  vim.o.termguicolors = true
-  vim.g.colors_name = "palette"
-  local c = M.colors
-  local hl = vim.api.nvim_set_hl
+}
 
+const highlightsTemplate = `  -- core UI
   hl(0, "Normal", { fg = c.fg, bg = c.bg })
   hl(0, "NormalFloat", { fg = c.fg, bg = c.bg })
   hl(0, "Cursor", { fg = c.bg, bg = c.cursor })
@@ -46,7 +60,10 @@ func formatNvim(t Theme) string {
   hl(0, "PmenuSel", { fg = c.bg, bg = c.cursor })
   hl(0, "PmenuSbar", { bg = c.black })
   hl(0, "PmenuThumb", { bg = c.bright_black })
-
+  hl(0, "FloatBorder", { fg = c.bright_black, bg = c.bg })
+  hl(0, "FloatTitle", { fg = c.blue, bg = c.bg, bold = true })
+  hl(0, "MatchParen", { fg = c.cursor, bold = true, underline = true })
+  -- syntax
   hl(0, "Comment", { fg = c.bright_black, italic = true })
   hl(0, "Constant", { fg = c.yellow })
   hl(0, "String", { fg = c.green })
@@ -54,7 +71,6 @@ func formatNvim(t Theme) string {
   hl(0, "Number", { fg = c.yellow })
   hl(0, "Boolean", { fg = c.yellow })
   hl(0, "Float", { fg = c.yellow })
-
   hl(0, "Identifier", { fg = c.fg })
   hl(0, "Function", { fg = c.blue, bold = true })
   hl(0, "Statement", { fg = c.magenta, bold = true })
@@ -70,7 +86,6 @@ func formatNvim(t Theme) string {
   hl(0, "Underlined", { underline = true })
   hl(0, "Error", { fg = c.red, bg = c.bg })
   hl(0, "Todo", { fg = c.yellow, bg = c.bg, bold = true })
-
   hl(0, "DiagnosticError", { fg = c.red })
   hl(0, "DiagnosticWarn", { fg = c.yellow })
   hl(0, "DiagnosticInfo", { fg = c.blue })
@@ -79,11 +94,16 @@ func formatNvim(t Theme) string {
   hl(0, "DiagnosticUnderlineWarn", { undercurl = true, sp = c.yellow })
   hl(0, "DiagnosticUnderlineInfo", { undercurl = true, sp = c.blue })
   hl(0, "DiagnosticUnderlineHint", { undercurl = true, sp = c.cyan })
-
-  hl(0, "FloatBorder", { fg = c.bright_black, bg = c.bg })
-  hl(0, "FloatTitle", { fg = c.blue, bg = c.bg, bold = true })
-  hl(0, "MatchParen", { fg = c.cursor, bold = true, underline = true })
-
+  -- plugins
+  hl(0, "BufferLineFill", { bg = c.black })
+  hl(0, "BufferLineBackground", { fg = c.bright_black, bg = c.black })
+  hl(0, "BufferLineBufferSelected", { fg = c.fg, bg = c.bg, bold = true })
+  hl(0, "BufferLineBufferVisible", { fg = c.fg, bg = c.black })
+  hl(0, "BufferLineSeparator", { fg = c.black, bg = c.black })
+  hl(0, "BufferLineSeparatorSelected", { fg = c.black, bg = c.bg })
+  hl(0, "BufferLineIndicatorSelected", { fg = c.blue, bg = c.bg })
+  hl(0, "BufferLineModified", { fg = c.yellow, bg = c.black })
+  hl(0, "BufferLineModifiedSelected", { fg = c.yellow, bg = c.bg })
   hl(0, "NeoTreeNormal", { fg = c.fg, bg = c.black })
   hl(0, "NeoTreeNormalNC", { fg = c.fg, bg = c.black })
   hl(0, "NeoTreeEndOfBuffer", { fg = c.black, bg = c.black })
@@ -98,7 +118,6 @@ func formatNvim(t Theme) string {
   hl(0, "NeoTreeGitDeleted", { fg = c.red })
   hl(0, "NeoTreeGitUntracked", { fg = c.bright_black })
   hl(0, "NeoTreeWinSeparator", { fg = c.bright_black, bg = c.black })
-
   hl(0, "NvimTreeNormal", { fg = c.fg, bg = c.black })
   hl(0, "NvimTreeNormalNC", { fg = c.fg, bg = c.black })
   hl(0, "NvimTreeEndOfBuffer", { fg = c.black, bg = c.black })
@@ -109,7 +128,28 @@ func formatNvim(t Theme) string {
   hl(0, "NvimTreeGitDirty", { fg = c.yellow })
   hl(0, "NvimTreeGitNew", { fg = c.green })
   hl(0, "NvimTreeGitDeleted", { fg = c.red })
-
+  hl(0, "GitSignsAdd", { fg = c.green })
+  hl(0, "GitSignsChange", { fg = c.yellow })
+  hl(0, "GitSignsDelete", { fg = c.red })
+  hl(0, "WhichKey", { fg = c.blue })
+  hl(0, "WhichKeyGroup", { fg = c.magenta, bold = true })
+  hl(0, "WhichKeyDesc", { fg = c.fg })
+  hl(0, "WhichKeySeparator", { fg = c.bright_black })
+  hl(0, "WhichKeyFloat", { bg = c.black })
+  hl(0, "WhichKeyBorder", { fg = c.bright_black, bg = c.black })
+  hl(0, "CmpItemAbbr", { fg = c.fg })
+  hl(0, "CmpItemAbbrMatch", { fg = c.blue, bold = true })
+  hl(0, "CmpItemAbbrMatchFuzzy", { fg = c.blue, bold = true })
+  hl(0, "CmpItemKindFunction", { fg = c.blue })
+  hl(0, "CmpItemKindMethod", { fg = c.blue })
+  hl(0, "CmpItemKindConstructor", { fg = c.yellow })
+  hl(0, "CmpItemKindVariable", { fg = c.fg })
+  hl(0, "CmpItemKindKeyword", { fg = c.magenta })
+  hl(0, "CmpItemKindSnippet", { fg = c.green })
+  hl(0, "MiniNotifyNormal", { fg = c.fg, bg = c.black })
+  hl(0, "MiniNotifyBorder", { fg = c.bright_black, bg = c.black })
+  hl(0, "MiniNotifyTitle", { fg = c.blue, bold = true })
+  -- telescope
   hl(0, "TelescopeNormal", { fg = c.fg, bg = c.black })
   hl(0, "TelescopeBorder", { fg = c.bright_black, bg = c.black })
   hl(0, "TelescopePromptNormal", { fg = c.fg, bg = c.black })
@@ -121,42 +161,7 @@ func formatNvim(t Theme) string {
   hl(0, "TelescopePreviewBorder", { fg = c.bright_black, bg = c.black })
   hl(0, "TelescopeSelection", { fg = c.fg, bg = c.bright_black })
   hl(0, "TelescopeMatching", { fg = c.yellow, bold = true })
-
-  hl(0, "BufferLineFill", { bg = c.black })
-  hl(0, "BufferLineBackground", { fg = c.bright_black, bg = c.black })
-  hl(0, "BufferLineBufferSelected", { fg = c.fg, bg = c.bg, bold = true })
-  hl(0, "BufferLineBufferVisible", { fg = c.fg, bg = c.black })
-  hl(0, "BufferLineSeparator", { fg = c.black, bg = c.black })
-  hl(0, "BufferLineSeparatorSelected", { fg = c.black, bg = c.bg })
-  hl(0, "BufferLineIndicatorSelected", { fg = c.blue, bg = c.bg })
-  hl(0, "BufferLineModified", { fg = c.yellow, bg = c.black })
-  hl(0, "BufferLineModifiedSelected", { fg = c.yellow, bg = c.bg })
-
-  hl(0, "GitSignsAdd", { fg = c.green })
-  hl(0, "GitSignsChange", { fg = c.yellow })
-  hl(0, "GitSignsDelete", { fg = c.red })
-
-  hl(0, "WhichKey", { fg = c.blue })
-  hl(0, "WhichKeyGroup", { fg = c.magenta, bold = true })
-  hl(0, "WhichKeyDesc", { fg = c.fg })
-  hl(0, "WhichKeySeparator", { fg = c.bright_black })
-  hl(0, "WhichKeyFloat", { bg = c.black })
-  hl(0, "WhichKeyBorder", { fg = c.bright_black, bg = c.black })
-
-  hl(0, "CmpItemAbbr", { fg = c.fg })
-  hl(0, "CmpItemAbbrMatch", { fg = c.blue, bold = true })
-  hl(0, "CmpItemAbbrMatchFuzzy", { fg = c.blue, bold = true })
-  hl(0, "CmpItemKindFunction", { fg = c.blue })
-  hl(0, "CmpItemKindMethod", { fg = c.blue })
-  hl(0, "CmpItemKindConstructor", { fg = c.yellow })
-  hl(0, "CmpItemKindVariable", { fg = c.fg })
-  hl(0, "CmpItemKindKeyword", { fg = c.magenta })
-  hl(0, "CmpItemKindSnippet", { fg = c.green })
-
-  hl(0, "MiniNotifyNormal", { fg = c.fg, bg = c.black })
-  hl(0, "MiniNotifyBorder", { fg = c.bright_black, bg = c.black })
-  hl(0, "MiniNotifyTitle", { fg = c.blue, bold = true })
-
+  -- treesitter
   hl(0, "@variable", { fg = c.fg })
   hl(0, "@variable.builtin", { fg = c.magenta, italic = true })
   hl(0, "@function", { fg = c.blue, bold = true })
@@ -177,7 +182,6 @@ func formatNvim(t Theme) string {
   hl(0, "@tag", { fg = c.magenta })
   hl(0, "@tag.attribute", { fg = c.yellow })
   hl(0, "@tag.delimiter", { fg = c.bright_black })
-
   hl(0, "@markup.heading.1", { fg = c.red, bold = true })
   hl(0, "@markup.heading.2", { fg = c.magenta, bold = true })
   hl(0, "@markup.heading.3", { fg = c.yellow, bold = true })
@@ -195,10 +199,14 @@ func formatNvim(t Theme) string {
   hl(0, "@markup.list", { fg = c.magenta })
   hl(0, "@markup.list.checked", { fg = c.green })
   hl(0, "@markup.list.unchecked", { fg = c.bright_black })
-end
+`
 
-M.lualine_theme = {
-  normal = {
+func writeHighlights(b *strings.Builder, t Theme) {
+	_ = t
+	b.WriteString(highlightsTemplate)
+}
+
+const lualineTemplate = `  normal = {
     a = { fg = M.colors.bg, bg = M.colors.blue, gui = "bold" },
     b = { fg = M.colors.fg, bg = M.colors.black },
     c = { fg = M.colors.fg, bg = M.colors.bg },
@@ -228,9 +236,9 @@ M.lualine_theme = {
     b = { fg = M.colors.bright_black, bg = M.colors.black },
     c = { fg = M.colors.bright_black, bg = M.colors.bg },
   },
-}
+`
 
-return M
-`)
-	return b.String()
+func writeLualine(b *strings.Builder, t Theme) {
+	_ = t
+	b.WriteString(lualineTemplate)
 }

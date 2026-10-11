@@ -12,6 +12,7 @@ func formatYAML(t Theme) (string, error) {
 	return string(bytes), nil
 }
 
+// ParseYAML parses a YAML theme definition into a Theme struct.
 func ParseYAML(data []byte) (Theme, error) {
 	var t Theme
 	err := yaml.Unmarshal(data, &t)

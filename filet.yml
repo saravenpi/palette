@@ -62,4 +62,4 @@ treesitter:
 
 disabled: []              # e.g. [gen.line.long, go.doc.missing]
 
-failOn: info                # info | warn | error | never
+failOn: error               # info | warn | error | never

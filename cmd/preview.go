@@ -20,30 +20,24 @@ func newPreviewCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imagePath := args[0]
-
 			img, err := palette.LoadImage(imagePath)
 			if err != nil {
 				return err
 			}
-
 			scaled := palette.Downscale(img, 400)
 			colors, dom, err := palette.ExtractColors(scaled, 16)
 			if err != nil {
 				return err
 			}
-
-			opts := palette.Options{
-				Mode:  mode,
-				Light: light,
-			}
-
+			opts := palette.Options{Mode: mode, Light: light}
 			theme := palette.GenerateTheme(colors, dom, opts)
 			fmt.Println(palette.RenderPreview(theme, imagePath, mode, light))
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVarP(&mode, "mode", "m", "tonal", "palette mode (tonal, wal, vibrant, expressive, duo, material, dominant)")
+	cmd.Flags().StringVarP(&mode, "mode", "m", "tonal",
+		"palette mode: tonal, wal, vibrant, expressive, duo,\n\tmaterial, dominant")
 	cmd.Flags().BoolVarP(&light, "light", "l", false, "generate light theme")
 
 	return cmd
