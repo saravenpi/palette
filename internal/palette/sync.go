@@ -23,6 +23,7 @@ func syncTargets(home string) []syncTarget {
 		{name: "nvim", format: "nvim", path: filepath.Join(home, ".config", "nvim", "lua", "palette.lua")},
 		{name: "sway", format: "sway", path: filepath.Join(home, ".config", "sway", "palette.conf")},
 		{name: "foot", format: "foot", path: filepath.Join(home, ".config", "foot", "palette.ini")},
+		{name: "waybar", format: "waybar", path: filepath.Join(home, ".config", "waybar", "palette.css")},
 	}
 }
 
@@ -111,6 +112,9 @@ func reloadApplications(tmuxConf string) []string {
 	}
 	if err := exec.Command("swaymsg", "reload").Run(); err == nil {
 		msgs = append(msgs, "reloaded sway session")
+	}
+	if err := exec.Command("pkill", "-SIGUSR2", "-u", uid, "waybar").Run(); err == nil {
+		msgs = append(msgs, "reloaded waybar via SIGUSR2")
 	}
 	reloadNvimSockets()
 	return msgs

@@ -2,7 +2,7 @@
 
 Terminal color palette generator and dotfile synchronization system.
 
-`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, and Neovim with zero startup latency and instant hot-reloading.
+`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Foot, and Waybar with zero startup latency and instant hot-reloading.
 
 ## Installation
 
@@ -72,6 +72,7 @@ palette wallpaper.jpg -f ghostty
 palette wallpaper.jpg -f alacritty
 palette wallpaper.jpg -f wezterm
 palette wallpaper.jpg -f foot
+palette wallpaper.jpg -f waybar
 palette wallpaper.jpg -f yaml
 palette wallpaper.jpg -f json
 ```
@@ -111,6 +112,24 @@ include=~/.config/foot/palette.ini
 The snippet is a `[colors-dark]` section, the format foot 1.26 and later expect.
 `[colors]` and `[cursor] color=` were removed upstream in 1.26.0 and 1.28.0.
 
+### Waybar
+
+`palette sync` writes GTK color definitions to `~/.config/waybar/palette.css`.
+Import it at the top of `~/.config/waybar/style.css` and reference the colors:
+
+```css
+@import url("palette.css");
+
+window#waybar {
+    background-color: @palette_bg;
+    color: @palette_fg;
+}
+```
+
+Defined names: `@palette_bg`, `@palette_fg`, `@palette_cursor` and
+`@palette_color0` through `@palette_color15`. They carry the same values foot,
+sway and tmux receive, so the bar always matches the rest of the desktop.
+
 ### Neovim
 
 Add to your Neovim configuration:
@@ -132,7 +151,12 @@ local colors = require("palette").colors
    - Kitty: `~/.config/kitty/palette.conf`
    - Tmux: `~/.config/tmux/palette.conf`
    - Neovim: `~/.config/nvim/lua/palette.lua` and `~/.config/nvim/colors/palette.lua`
+   - Sway: `~/.config/sway/palette.conf`
+   - Foot: `~/.config/foot/palette.ini`
+   - Waybar: `~/.config/waybar/palette.css`
 3. Running applications reload live without restarting:
    - Kitty receives `SIGUSR1`.
    - Tmux runs `tmux source-file`.
    - Active Neovim sockets receive `<Cmd>colorscheme palette<CR>`.
+   - Sway runs `swaymsg reload`.
+   - Waybar receives `SIGUSR2`.

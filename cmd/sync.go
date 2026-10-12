@@ -49,9 +49,9 @@ func runSyncCommand(cmd *cobra.Command, args []string) error {
 func newSyncCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sync [palette.yml]",
-		Short: "Sync palette to Kitty, Tmux, Neovim, Sway, and Foot",
+		Short: "Sync palette to Kitty, Tmux, Neovim, Sway, Foot, and Waybar",
 		Long: `sync reads a palette YAML file (defaults to ~/.config/palette/config.yml or ~/.palette.yml),
-compiles native config fragments for Kitty, Tmux, Neovim, Sway, and Foot, writes them to their config paths,
+compiles native config fragments for Kitty, Tmux, Neovim, Sway, Foot, and Waybar, writes them to their config paths,
 and signals running applications to hot-reload.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: runSyncCommand,

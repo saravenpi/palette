@@ -37,7 +37,7 @@ func newGenerateCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&f.format, "format", "f", "ghostty",
 		"output format: ghostty, kitty, alacritty, wezterm, foot, sway,\n\t"+
-			"xresources, tmux, nvim, yaml, json, hex")
+			"xresources, tmux, nvim, waybar, yaml, json, hex")
 	cmd.Flags().StringVarP(&f.mode, "mode", "m", "tonal",
 		"palette mode: tonal, wal, vibrant, expressive, duo,\n\tmaterial, dominant")
 	cmd.Flags().BoolVarP(&f.light, "light", "l", false, "generate light theme")
@@ -45,7 +45,8 @@ func newGenerateCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&f.raw, "raw", "r", false, "output raw config without styling")
 	cmd.Flags().StringVarP(&f.output, "output", "o", "", "write theme to file")
 	cmd.Flags().IntVar(&f.maxDim, "max-dim", 400, "maximum image dimension before color extraction")
-	cmd.Flags().BoolVarP(&f.sync, "sync", "s", false, "save theme to config and sync Kitty, Tmux, Neovim, Sway, Foot")
+	cmd.Flags().BoolVarP(&f.sync, "sync", "s", false,
+		"save theme to config and sync Kitty, Tmux, Neovim, Sway, Foot, Waybar")
 
 	return cmd
 }

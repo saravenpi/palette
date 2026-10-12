@@ -1,0 +1,62 @@
+package formats
+
+import (
+	"strings"
+	"testing"
+)
+
+func coherenceTheme() Theme {
+	return Theme{
+		Background: "#19120c",
+		Foreground: "#e8e1dd",
+		Cursor:     "#ffc079",
+		Palette: [16]string{
+			"#261e15", "#ff8a70", "#a2b275", "#d6a163",
+			"#5eb5e1", "#ca9dc7", "#79b7a8", "#ccc5c2",
+			"#776b5f", "#ffcbc0", "#cede9e", "#ffcf99",
+			"#a8deff", "#f9c8f4", "#a4e4d3", "#fcf5f4",
+		},
+	}
+}
+
+func TestFormatWaybar(t *testing.T) {
+	theme := coherenceTheme()
+	out, err := FormatTheme(theme, "waybar")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, want := range []string{
+		"@define-color palette_bg #19120c;",
+		"@define-color palette_fg #e8e1dd;",
+		"@define-color palette_cursor #ffc079;",
+		"@define-color palette_color0 #261e15;",
+		"@define-color palette_color15 #fcf5f4;",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("waybar output missing %q:\n%s", want, out)
+		}
+	}
+	if got := strings.Count(out, "@define-color"); got != 19 {
+		t.Errorf("waybar output should define 19 colors, got %d:\n%s", got, out)
+	}
+}
+
+func TestAdaptersShareBackground(t *testing.T) {
+	theme := coherenceTheme()
+	checks := map[string]string{
+		"kitty":  "background " + theme.Background,
+		"foot":   "background=" + strings.TrimPrefix(theme.Background, "#"),
+		"sway":   "set $palette_bg " + theme.Background,
+		"tmux":   "@palette_bg \"" + theme.Background + "\"",
+		"waybar": "@define-color palette_bg " + theme.Background + ";",
+	}
+	for format, want := range checks {
+		out, err := FormatTheme(theme, format)
+		if err != nil {
+			t.Fatalf("%s: unexpected error: %v", format, err)
+		}
+		if !strings.Contains(out, want) {
+			t.Errorf("%s output does not carry theme background %q:\n%s", format, theme.Background, out)
+		}
+	}
+}
