@@ -8,6 +8,16 @@ Releases before 0.6.0 predate this changelog.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-12
+
+### Added
+
+- `waybar`: new sync target and export format writing GTK color definitions
+  (`@define-color palette_bg`, `palette_fg`, `palette_cursor` and
+  `palette_color0`..`palette_color15`) to `~/.config/waybar/palette.css`, so
+  waybar carries the same colors as foot, sway and tmux.
+- `palette sync` reloads a running waybar with `SIGUSR2` after writing.
+
 ## [0.6.0] - 2026-10-11
 
 ### Changed
