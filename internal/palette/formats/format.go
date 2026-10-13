@@ -20,6 +20,8 @@ func FormatTheme(t Theme, format string) (string, error) {
 		return formatFoot(t), nil
 	case "sway":
 		return formatSway(t), nil
+	case "hyprland", "hypr":
+		return formatHyprland(t), nil
 	case "waybar":
 		return formatWaybar(t), nil
 	case "widgets":
@@ -41,7 +43,7 @@ func FormatTheme(t Theme, format string) (string, error) {
 	case "hex":
 		return formatHex(t), nil
 	default:
-		supported := "ghostty,kitty,alacritty,wezterm,foot,sway,waybar,widgets,mako,vim," +
+		supported := "ghostty,kitty,alacritty,wezterm,foot,sway,hyprland,waybar,widgets,mako,vim," +
 			"xresources,tmux,nvim,yaml,json,hex"
 		return "", fmt.Errorf("unknown format %q; supported: %s", format, supported)
 	}
