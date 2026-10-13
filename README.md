@@ -144,7 +144,8 @@ which the `statusbar`, `sidebar` and `launcher` binaries of
 `--palette-bg`, `--palette-fg`, `--palette-cursor` and `--palette-color0`
 through `--palette-color15` as `:root` custom properties, plus the
 `@palette_bg`-style named colors GTK 4.15 and older fall back to. Nothing to
-wire up: run `palette sync` and restart a widget to pick up new colors.
+wire up: the widgets watch that file, so `palette sync` restyles a running bar,
+sidebar or launcher in place — no restart.
 
 ### Neovim
 
@@ -187,3 +188,4 @@ colorscheme palette
    - Active Neovim sockets receive `<Cmd>colorscheme palette<CR>`.
    - Sway runs `swaymsg reload`.
    - Waybar receives `SIGUSR2`.
+   - Widgets reread `~/.config/widgets/palette.css` from a `GFileMonitor`.

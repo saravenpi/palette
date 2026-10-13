@@ -8,6 +8,12 @@ Releases before 0.6.0 predate this changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- README: the widgets section no longer tells you to restart a widget after
+  `palette sync`. The widgets watch `~/.config/widgets/palette.css`, so the bar,
+  sidebar and launcher restyle themselves when the file is rewritten.
+
 ## [0.9.1] - 2026-10-13
 
 ### Fixed
