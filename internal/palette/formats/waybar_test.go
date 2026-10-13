@@ -25,20 +25,8 @@ func TestFormatWaybar(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	for _, want := range []string{
-		"@define-color palette_bg #19120c;",
-		"@define-color palette_fg #e8e1dd;",
-		"@define-color palette_cursor #ffc079;",
-		"@define-color palette_color0 #261e15;",
-		"@define-color palette_color15 #fcf5f4;",
-	} {
-		if !strings.Contains(out, want) {
-			t.Errorf("waybar output missing %q:\n%s", want, out)
-		}
-	}
-	if got := strings.Count(out, "@define-color"); got != 19 {
-		t.Errorf("waybar output should define 19 colors, got %d:\n%s", got, out)
-	}
+	assertCustomProperties(t, "waybar", theme, out)
+	assertNamedColors(t, "waybar", theme, out)
 }
 
 func TestAdaptersShareBackground(t *testing.T) {
