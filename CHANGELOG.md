@@ -8,6 +8,15 @@ Releases before 0.6.0 predate this changelog.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-10-13
+
+### Fixed
+
+- `sync`: a config directory that is a symlink whose target is missing — the
+  layout dotfile managers routinely leave behind — made `os.MkdirAll` fail with
+  "file exists" and aborted the whole sync. The link is now resolved and its
+  target directory created only when absent, so every target is written.
+
 ## [0.9.0] - 2026-10-13
 
 ### Changed
