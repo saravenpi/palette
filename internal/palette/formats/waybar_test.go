@@ -44,11 +44,13 @@ func TestFormatWaybar(t *testing.T) {
 func TestAdaptersShareBackground(t *testing.T) {
 	theme := coherenceTheme()
 	checks := map[string]string{
-		"kitty":  "background " + theme.Background,
-		"foot":   "background=" + strings.TrimPrefix(theme.Background, "#"),
-		"sway":   "set $palette_bg " + theme.Background,
-		"tmux":   "@palette_bg \"" + theme.Background + "\"",
-		"waybar": "@define-color palette_bg " + theme.Background + ";",
+		"kitty":   "background " + theme.Background,
+		"foot":    "background=" + strings.TrimPrefix(theme.Background, "#"),
+		"sway":    "set $palette_bg " + theme.Background,
+		"tmux":    "@palette_bg \"" + theme.Background + "\"",
+		"waybar":  "@define-color palette_bg " + theme.Background + ";",
+		"widgets": "@define-color palette_bg " + theme.Background + ";",
+		"vim":     "guifg=" + theme.Foreground + " guibg=" + theme.Background,
 	}
 	for format, want := range checks {
 		out, err := FormatTheme(theme, format)

@@ -2,7 +2,7 @@
 
 Terminal color palette generator and dotfile synchronization system.
 
-`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Foot, and Waybar with zero startup latency and instant hot-reloading.
+`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Foot, Waybar, Widgets, and Vim with zero startup latency and instant hot-reloading.
 
 ## Installation
 
@@ -73,6 +73,8 @@ palette wallpaper.jpg -f alacritty
 palette wallpaper.jpg -f wezterm
 palette wallpaper.jpg -f foot
 palette wallpaper.jpg -f waybar
+palette wallpaper.jpg -f widgets
+palette wallpaper.jpg -f vim
 palette wallpaper.jpg -f yaml
 palette wallpaper.jpg -f json
 ```
@@ -130,6 +132,14 @@ Defined names: `@palette_bg`, `@palette_fg`, `@palette_cursor` and
 `@palette_color0` through `@palette_color15`. They carry the same values foot,
 sway and tmux receive, so the bar always matches the rest of the desktop.
 
+### Widgets
+
+`palette sync` writes the same GTK color definitions to
+`~/.config/widgets/palette.css`, which the `statusbar`, `sidebar` and
+`launcher` binaries of [widgets](https://github.com/Saravenpi/widgets) load at
+startup. Nothing to wire up: run `palette sync` and restart a widget to pick
+up new colors.
+
 ### Neovim
 
 Add to your Neovim configuration:
@@ -144,6 +154,15 @@ Or consume the raw color table in your own theme:
 local colors = require("palette").colors
 ```
 
+### Vim
+
+`palette sync` writes a complete colorscheme to `~/.vim/colors/palette.vim`.
+Load it from `~/.vimrc` (the default runtimepath already covers `~/.vim`):
+
+```vim
+colorscheme palette
+```
+
 ## How sync works
 
 1. Canonical colors are stored in `~/.palette.yml`.
@@ -154,6 +173,8 @@ local colors = require("palette").colors
    - Sway: `~/.config/sway/palette.conf`
    - Foot: `~/.config/foot/palette.ini`
    - Waybar: `~/.config/waybar/palette.css`
+   - Widgets: `~/.config/widgets/palette.css`
+   - Vim: `~/.vim/colors/palette.vim`
 3. Running applications reload live without restarting:
    - Kitty receives `SIGUSR1`.
    - Tmux runs `tmux source-file`.
