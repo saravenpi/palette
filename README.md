@@ -2,7 +2,7 @@
 
 Terminal color palette generator and dotfile synchronization system.
 
-`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Foot, Waybar, Widgets, Mako, and Vim with zero startup latency and instant hot-reloading.
+`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Hyprland, Foot, Waybar, Widgets, Mako, and Vim with zero startup latency and instant hot-reloading.
 
 ## Installation
 
@@ -72,6 +72,7 @@ palette wallpaper.jpg -f ghostty
 palette wallpaper.jpg -f alacritty
 palette wallpaper.jpg -f wezterm
 palette wallpaper.jpg -f foot
+palette wallpaper.jpg -f hyprland
 palette wallpaper.jpg -f waybar
 palette wallpaper.jpg -f widgets
 palette wallpaper.jpg -f mako
@@ -114,6 +115,24 @@ include=~/.config/foot/palette.ini
 
 The snippet is a `[colors-dark]` section, the format foot 1.26 and later expect.
 `[colors]` and `[cursor] color=` were removed upstream in 1.26.0 and 1.28.0.
+
+### Hyprland
+
+Add to `~/.config/hypr/hyprland.conf`:
+
+```conf
+source = ~/.config/hypr/palette.conf
+```
+
+`palette sync` writes `~/.config/hypr/palette.conf` with `$palette_bg`,
+`$palette_fg`, `$palette_cursor` and `$palette_color0` through
+`$palette_color15`, each spelled the way Hyprland wants a colour —
+`rgb(RRGGBB)`, not `#RRGGBB`. It also derives three role variables so the window
+rules never point at a raw index: `$active_border` (the accent), `$inactive_border`
+(the dim grey) and `$urgent_border` (the urgency colour). Reference them from any
+general, decoration or misc line, for example
+`col.active_border = $active_border`. `palette sync` reloads a running Hyprland
+with `hyprctl reload`.
 
 ### Waybar
 
@@ -193,6 +212,7 @@ colorscheme palette
    - Tmux: `~/.config/tmux/palette.conf`
    - Neovim: `~/.config/nvim/lua/palette.lua` and `~/.config/nvim/colors/palette.lua`
    - Sway: `~/.config/sway/palette.conf`
+   - Hyprland: `~/.config/hypr/palette.conf`
    - Foot: `~/.config/foot/palette.ini`
    - Waybar: `~/.config/waybar/palette.css`
    - Widgets: `~/.config/widgets/palette.css`
@@ -203,6 +223,7 @@ colorscheme palette
    - Tmux runs `tmux source-file`.
    - Active Neovim sockets receive `<Cmd>colorscheme palette<CR>`.
    - Sway runs `swaymsg reload`.
+   - Hyprland runs `hyprctl reload`.
    - Waybar receives `SIGUSR2`.
    - Widgets reread `~/.config/widgets/palette.css` from a `GFileMonitor`.
    - Mako is told to reload with `makoctl reload`.
