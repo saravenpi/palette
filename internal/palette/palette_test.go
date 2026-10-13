@@ -3,6 +3,8 @@ package palette
 import (
 	"image"
 	"image/color"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -220,6 +222,52 @@ func TestFormatFoot(t *testing.T) {
 	}
 	if strings.Contains(footOut, "[colors]") || strings.Contains(footOut, "[cursor]") {
 		t.Errorf("foot output uses a section removed in foot 1.26/1.28: %s", footOut)
+	}
+}
+
+func TestEnsureDir(t *testing.T) {
+	root := t.TempDir()
+
+	existing := filepath.Join(root, "existing")
+	if err := os.MkdirAll(existing, 0755); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := ensureDir(existing); err != nil {
+		t.Errorf("existing directory should be left alone: %v", err)
+	}
+
+	missing := filepath.Join(root, "missing", "nested")
+	if err := ensureDir(missing); err != nil {
+		t.Fatalf("missing directory should be created: %v", err)
+	}
+	if info, err := os.Stat(missing); err != nil || !info.IsDir() {
+		t.Errorf("missing directory was not created: %v", err)
+	}
+
+	target := filepath.Join(root, "dotfiles", "waybar")
+	link := filepath.Join(root, "linked")
+	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := ensureDir(link); err != nil {
+		t.Fatalf("dangling symlink must resolve and create its target: %v", err)
+	}
+	if info, err := os.Stat(target); err != nil || !info.IsDir() {
+		t.Errorf("symlink target was not created: %v", err)
+	}
+	if _, err := os.Stat(link); err != nil {
+		t.Errorf("symlink should resolve after ensureDir: %v", err)
+	}
+
+	file := filepath.Join(root, "plain-file")
+	if err := os.WriteFile(file, []byte("x"), 0644); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := ensureDir(file); err == nil {
+		t.Errorf("a plain file should not be accepted as a directory")
 	}
 }
 

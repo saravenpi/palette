@@ -61,11 +61,50 @@ func SavePaletteFile(path string, t Theme) error {
 	if err != nil {
 		return err
 	}
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := ensureDir(filepath.Dir(path)); err != nil {
 		return err
 	}
 	return os.WriteFile(path, []byte(data), 0644)
+}
+
+// ensureDir makes sure dir exists as a directory, creating it and its parents
+// only when they are missing. os.MkdirAll fails with a "file exists" error when
+// dir is a symlink whose target is missing — the layout dotfile managers leave
+// behind — so the dangling link is resolved and the directory it points at is
+// created instead.
+func ensureDir(dir string) error {
+	info, err := os.Stat(dir)
+	if err == nil {
+		if info.IsDir() {
+			return nil
+		}
+		return fmt.Errorf("%s exists and is not a directory", dir)
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+	return os.MkdirAll(resolveSymlink(dir), 0755)
+}
+
+// resolveSymlink follows the symlink chain at path and returns the final target,
+// whether or not that target exists. A path that is not a symlink is returned
+// unchanged.
+func resolveSymlink(path string) string {
+	for range 32 {
+		info, err := os.Lstat(path)
+		if err != nil || info.Mode()&os.ModeSymlink == 0 {
+			return path
+		}
+		target, err := os.Readlink(path)
+		if err != nil {
+			return path
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(path), target)
+		}
+		path = target
+	}
+	return path
 }
 
 // Sync compiles theme snippets for supported applications and hot-reloads them.
@@ -96,8 +135,7 @@ func Sync(t Theme, reload bool) ([]string, error) {
 }
 
 func writeFormatted(path string, content string) error {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := ensureDir(filepath.Dir(path)); err != nil {
 		return err
 	}
 	return os.WriteFile(path, []byte(content), 0644)
