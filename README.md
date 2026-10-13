@@ -116,29 +116,35 @@ The snippet is a `[colors-dark]` section, the format foot 1.26 and later expect.
 
 ### Waybar
 
-`palette sync` writes GTK color definitions to `~/.config/waybar/palette.css`.
-Import it at the top of `~/.config/waybar/style.css` and reference the colors:
+`palette sync` writes the colors to `~/.config/waybar/palette.css` in two
+forms. Import it at the top of `~/.config/waybar/style.css` and use whichever
+your GTK understands:
 
 ```css
 @import url("palette.css");
 
 window#waybar {
-    background-color: @palette_bg;
-    color: @palette_fg;
+    background-color: var(--palette-bg);
+    color: var(--palette-fg);
 }
 ```
 
-Defined names: `@palette_bg`, `@palette_fg`, `@palette_cursor` and
-`@palette_color0` through `@palette_color15`. They carry the same values foot,
-sway and tmux receive, so the bar always matches the rest of the desktop.
+`var()` and the `:root` custom properties behind it are GTK 4.16 and later
+(and standard CSS everywhere else). On GTK 4.10 to 4.15 use the named colors
+instead — `@palette_bg`, `@palette_fg`, `@palette_cursor` and `@palette_color0`
+through `@palette_color15`, which the same file declares as a fallback. Both
+spellings carry the same values foot, sway and tmux receive, so the bar always
+matches the rest of the desktop.
 
 ### Widgets
 
-`palette sync` writes the same GTK color definitions to
-`~/.config/widgets/palette.css`, which the `statusbar`, `sidebar` and
-`launcher` binaries of [widgets](https://github.com/Saravenpi/widgets) load at
-startup. Nothing to wire up: run `palette sync` and restart a widget to pick
-up new colors.
+`palette sync` writes the same stylesheet to `~/.config/widgets/palette.css`,
+which the `statusbar`, `sidebar` and `launcher` binaries of
+[widgets](https://github.com/Saravenpi/widgets) load at startup. It defines
+`--palette-bg`, `--palette-fg`, `--palette-cursor` and `--palette-color0`
+through `--palette-color15` as `:root` custom properties, plus the
+`@palette_bg`-style named colors GTK 4.15 and older fall back to. Nothing to
+wire up: run `palette sync` and restart a widget to pick up new colors.
 
 ### Neovim
 
