@@ -8,6 +8,8 @@ Releases before 0.6.0 predate this changelog.
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-10-13
+
 ### Changed
 
 - README: the widgets section no longer tells you to restart a widget after
