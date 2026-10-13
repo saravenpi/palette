@@ -8,6 +8,19 @@ Releases before 0.6.0 predate this changelog.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-13
+
+### Added
+
+- `widgets`: new sync target and export format writing GTK color definitions
+  (`@define-color palette_bg`, `palette_fg`, `palette_cursor` and
+  `palette_color0`..`palette_color15`) to `~/.config/widgets/palette.css`, the
+  file the statusbar, sidebar and launcher of
+  [widgets](https://github.com/Saravenpi/widgets) load at startup.
+- `vim`: new sync target and export format writing a complete Vim colorscheme
+  (`g:colors_name = "palette"`, GUI hex colors plus cterm 0-15 indices) to
+  `~/.vim/colors/palette.vim`.
+
 ## [0.7.0] - 2026-10-12
 
 ### Added
