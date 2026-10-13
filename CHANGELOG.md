@@ -8,6 +8,18 @@ Releases before 0.6.0 predate this changelog.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-13
+
+### Changed
+
+- `widgets` and `waybar`: the generated stylesheet now declares every color as
+  a `:root` custom property (`--palette-bg`, `--palette-fg`, `--palette-cursor`,
+  `--palette-color0`..`--palette-color15`) so stylesheets can use `var()`, and
+  keeps the `@define-color` declarations below it as the fallback. Custom
+  properties, `:root` and `var()` are GTK 4.16 and later; GTK 4.10 to 4.15
+  ignore the new block and read the named colors exactly as before, so existing
+  consumers need no change.
+
 ## [0.8.0] - 2026-10-13
 
 ### Added
