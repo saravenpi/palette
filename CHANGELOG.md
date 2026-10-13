@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Releases before 0.6.0 predate this changelog.
 
+## [0.11.0] - 2026-10-13
+
+### Added
+
+- `hyprland`: new sync target and export format writing a colour fragment to
+  `~/.config/hypr/palette.conf`. Hyprland spells colours `rgb(RRGGBB)`, so every
+  value is converted from the palette's hex, and three role variables
+  (`$active_border`, `$inactive_border`, `$urgent_border`) name the focused,
+  dimmed and urgent border colours so window rules never hard-code an index.
+- `palette sync` reloads a running Hyprland with `hyprctl reload` after writing.
+
 ## [0.10.0] - 2026-10-13
 
 ### Added
