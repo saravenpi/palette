@@ -25,6 +25,7 @@ func syncTargets(home string) []syncTarget {
 		{name: "foot", format: "foot", path: filepath.Join(home, ".config", "foot", "palette.ini")},
 		{name: "waybar", format: "waybar", path: filepath.Join(home, ".config", "waybar", "palette.css")},
 		{name: "widgets", format: "widgets", path: filepath.Join(home, ".config", "widgets", "palette.css")},
+		{name: "mako", format: "mako", path: filepath.Join(home, ".config", "mako", "palette.conf")},
 		{name: "vim", format: "vim", path: filepath.Join(home, ".vim", "colors", "palette.vim")},
 	}
 }
@@ -155,6 +156,9 @@ func reloadApplications(tmuxConf string) []string {
 	}
 	if err := exec.Command("pkill", "-SIGUSR2", "-u", uid, "waybar").Run(); err == nil {
 		msgs = append(msgs, "reloaded waybar via SIGUSR2")
+	}
+	if err := exec.Command("makoctl", "reload").Run(); err == nil {
+		msgs = append(msgs, "reloaded mako")
 	}
 	reloadNvimSockets()
 	return msgs
