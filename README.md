@@ -2,7 +2,7 @@
 
 Terminal color palette generator and dotfile synchronization system.
 
-`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Foot, Waybar, Widgets, and Vim with zero startup latency and instant hot-reloading.
+`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Foot, Waybar, Widgets, Mako, and Vim with zero startup latency and instant hot-reloading.
 
 ## Installation
 
@@ -74,6 +74,7 @@ palette wallpaper.jpg -f wezterm
 palette wallpaper.jpg -f foot
 palette wallpaper.jpg -f waybar
 palette wallpaper.jpg -f widgets
+palette wallpaper.jpg -f mako
 palette wallpaper.jpg -f vim
 palette wallpaper.jpg -f yaml
 palette wallpaper.jpg -f json
@@ -147,6 +148,20 @@ through `--palette-color15` as `:root` custom properties, plus the
 wire up: the widgets watch that file, so `palette sync` restyles a running bar,
 sidebar or launcher in place — no restart.
 
+### Mako
+
+Add to `~/.config/mako/config`:
+
+```ini
+include=~/.config/mako/palette.conf
+```
+
+`palette sync` writes `~/.config/mako/palette.conf` with the palette-driven
+mako colours: the translucent popup background, the text colour, the accent
+hairline and the progress bar, plus a `[urgency=critical]` section carrying the
+urgency accent. Size, radius, margins and timeouts stay in `config` itself.
+`palette sync` reloads a running mako with `makoctl reload`.
+
 ### Neovim
 
 Add to your Neovim configuration:
@@ -181,6 +196,7 @@ colorscheme palette
    - Foot: `~/.config/foot/palette.ini`
    - Waybar: `~/.config/waybar/palette.css`
    - Widgets: `~/.config/widgets/palette.css`
+   - Mako: `~/.config/mako/palette.conf`
    - Vim: `~/.vim/colors/palette.vim`
 3. Running applications reload live without restarting:
    - Kitty receives `SIGUSR1`.
@@ -189,3 +205,4 @@ colorscheme palette
    - Sway runs `swaymsg reload`.
    - Waybar receives `SIGUSR2`.
    - Widgets reread `~/.config/widgets/palette.css` from a `GFileMonitor`.
+   - Mako is told to reload with `makoctl reload`.

@@ -38,6 +38,7 @@ func TestAdaptersShareBackground(t *testing.T) {
 		"tmux":    "@palette_bg \"" + theme.Background + "\"",
 		"waybar":  "@define-color palette_bg " + theme.Background + ";",
 		"widgets": "@define-color palette_bg " + theme.Background + ";",
+		"mako":    "background-color=" + theme.Background,
 		"vim":     "guifg=" + theme.Foreground + " guibg=" + theme.Background,
 	}
 	for format, want := range checks {

@@ -6,7 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Releases before 0.6.0 predate this changelog.
 
-## [Unreleased]
+## [0.10.0] - 2026-10-13
+
+### Added
+
+- `mako`: new sync target and export format writing the palette-driven mako
+  colours (`background-color`, `text-color`, `border-color`, `progress-color`
+  and an `[urgency=critical]` accent) to `~/.config/mako/palette.conf`, the
+  fragment a mako config pulls in with `include=`.
+- `palette sync` reloads a running mako with `makoctl reload` after writing.
 
 ## [0.9.2] - 2026-10-13
 
