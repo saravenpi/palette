@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Releases before 0.6.0 predate this changelog.
 
+## [0.12.0] - 2026-10-19
+
+### Added
+
+- `yazi`: new sync target and export format writing a complete
+  `~/.config/yazi/theme.toml`. Yazi merges it over its built-in dark/light
+  preset, so layout, icons and keymaps stay in `yazi.toml` and `keymap.toml`
+  while the file list, markers, tabs, modes, indicator, status bar, dialogs and
+  per-file-type rules follow the palette. Yazi reads the theme at startup and
+  has no reload hook, so a running instance needs a restart.
+
 ## [0.11.0] - 2026-10-13
 
 ### Added
