@@ -27,6 +27,7 @@ func syncTargets(home string) []syncTarget {
 		{name: "waybar", format: "waybar", path: filepath.Join(home, ".config", "waybar", "palette.css")},
 		{name: "widgets", format: "widgets", path: filepath.Join(home, ".config", "widgets", "palette.css")},
 		{name: "mako", format: "mako", path: filepath.Join(home, ".config", "mako", "palette.conf")},
+		{name: "yazi", format: "yazi", path: filepath.Join(home, ".config", "yazi", "theme.toml")},
 		{name: "vim", format: "vim", path: filepath.Join(home, ".vim", "colors", "palette.vim")},
 	}
 }

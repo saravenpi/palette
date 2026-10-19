@@ -2,7 +2,7 @@
 
 Terminal color palette generator and dotfile synchronization system.
 
-`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Hyprland, Foot, Waybar, Widgets, Mako, and Vim with zero startup latency and instant hot-reloading.
+`palette` extracts harmonious 16-color ANSI palettes from images and synchronizes them across Kitty, Tmux, Neovim, Sway, Hyprland, Foot, Waybar, Widgets, Mako, Yazi, and Vim with zero startup latency and instant hot-reloading.
 
 ## Installation
 
@@ -30,7 +30,7 @@ This compiles and installs the binary to `~/.local/bin/palette`.
 palette wallpaper.jpg -s
 ```
 
-This extracts dominant colors from the image, writes them to `~/.palette.yml`, and immediately updates Kitty, Tmux, and Neovim.
+This extracts dominant colors from the image, writes them to `~/.palette.yml`, and immediately syncs the generated theme to every supported application.
 
 ### Sync manually after editing colors
 
@@ -76,6 +76,7 @@ palette wallpaper.jpg -f hyprland
 palette wallpaper.jpg -f waybar
 palette wallpaper.jpg -f widgets
 palette wallpaper.jpg -f mako
+palette wallpaper.jpg -f yazi
 palette wallpaper.jpg -f vim
 palette wallpaper.jpg -f yaml
 palette wallpaper.jpg -f json
@@ -195,6 +196,15 @@ Or consume the raw color table in your own theme:
 local colors = require("palette").colors
 ```
 
+### Yazi
+
+`palette sync` writes a complete `~/.config/yazi/theme.toml`. Yazi merges it
+over its built-in dark/light preset, so layout, icons and keymaps stay in
+`yazi.toml` and `keymap.toml`. The generated file covers the file list and its
+markers, tabs, modes, indicator, status bar, every dialog, and the per-file-type
+rules. Yazi has no reload hook, so restart a running instance to pick up the
+new colours.
+
 ### Vim
 
 `palette sync` writes a complete colorscheme to `~/.vim/colors/palette.vim`.
@@ -217,6 +227,7 @@ colorscheme palette
    - Waybar: `~/.config/waybar/palette.css`
    - Widgets: `~/.config/widgets/palette.css`
    - Mako: `~/.config/mako/palette.conf`
+   - Yazi: `~/.config/yazi/theme.toml`
    - Vim: `~/.vim/colors/palette.vim`
 3. Running applications reload live without restarting:
    - Kitty receives `SIGUSR1`.
@@ -227,3 +238,4 @@ colorscheme palette
    - Waybar receives `SIGUSR2`.
    - Widgets reread `~/.config/widgets/palette.css` from a `GFileMonitor`.
    - Mako is told to reload with `makoctl reload`.
+   - Yazi reads its theme at startup, so it needs a restart.
